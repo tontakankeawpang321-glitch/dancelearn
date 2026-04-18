@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <!-- 1. โหลด SDK ไว้บนสุด -->
-    <script src="https://unpkg.com/livekit-client@2.0.4/dist/livekit-client.umd.min.js"></script>
+    <!-- 1. โหลด SDK v1.15.4 ซึ่งรองรับ Global UMD สำหรับ window.LivekitClient -->
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@1.15.4/dist/livekit-client.umd.min.js"></script>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (LiveKit Robust Edition)</title>
+    <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (LiveKit v1 Stable)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -318,7 +319,7 @@
             if (liveModal) liveModal.classList.remove('hidden');
 
             try {
-                // 1. Fetch Token with Error Handling (CORS check)
+                // 1. Fetch Token
                 const response = await fetch(`${WORKER_URL}?room=${encodeURIComponent(title)}&role=${role}`)
                     .catch(err => { throw new Error("Worker Connection Failed (Check CORS)"); });
                 
@@ -327,10 +328,11 @@
 
                 if (!token) throw new Error("ไม่ได้รับ Token จากระบบ");
 
-                // 2. Setup Room with Robust Namespace Check
-                const RoomClass = window.LivekitClient?.Room || window.LiveKitClient?.Room || window.LiveKit?.Room;
+                // 2. Setup Room for v1 (Global Namespace)
+                const LK = window.LivekitClient;
+                const RoomClass = LK?.Room;
                 if (!RoomClass) {
-                    throw new Error("หา Class Room ของ LiveKit ไม่เจอ (Namespace Error)");
+                    throw new Error(`SDK ไม่พร้อม — window keys: ${Object.keys(window).filter(k=>k.toLowerCase().includes('livekit'))}`);
                 }
 
                 livekitRoom = new RoomClass({
@@ -338,8 +340,7 @@
                     dynacast: true,
                 });
 
-                // Get Event object dynamically
-                const LKEvents = window.LivekitClient?.RoomEvent || window.LiveKitClient?.RoomEvent || window.LiveKit?.RoomEvent;
+                const LKEvents = LK.RoomEvent;
 
                 // Subscribe to tracks
                 livekitRoom.on(LKEvents.TrackSubscribed, (track, publication, participant) => {
@@ -350,7 +351,7 @@
                     }
                 });
 
-                // Subscribe to local published tracks (v2 standard)
+                // Subscribe to local published tracks
                 livekitRoom.on(LKEvents.LocalTrackPublished, (publication) => {
                     if (publication.kind === 'video' && publication.track) {
                         attachTrack(publication.track, 'local');
@@ -375,7 +376,7 @@
                     const hostCtrl = document.getElementById('host-controls');
                     if (hostCtrl) hostCtrl.classList.remove('hidden');
                     
-                    // Enable camera and mic for host
+                    // Enable camera and mic
                     await livekitRoom.localParticipant.setCameraEnabled(true);
                     await livekitRoom.localParticipant.setMicrophoneEnabled(true);
                     
@@ -421,8 +422,8 @@
             const countEl = document.getElementById('live-viewer-count');
             if (!countEl) return;
             
-            // Robust counting for v2
-            const count = livekitRoom.numParticipants || (livekitRoom.remoteParticipants?.size ?? 0) + 1;
+            // v1 style uses participants Map
+            const count = (livekitRoom.participants?.size ?? 0) + 1;
             countEl.innerText = count;
         }
 
@@ -465,7 +466,6 @@
             
             lucide.createIcons();
             
-            // Refresh lobby only if requested and we are currently in the lobby view
             if (shouldRefreshLobby && document.getElementById('active-lives-container')) {
                 openLiveLobby();
             }
@@ -640,7 +640,6 @@
         
         async function goHome() { 
             closeModal(); 
-            // Call closeLive without lobby refresh to allow Home rendering
             await closeLive(false); 
             renderHome(); 
         }
@@ -688,26 +687,21 @@
             setTimeout(() => msg.remove(), 3000);
         }
 
-        // รวมการทำงานเมื่อโหลดหน้าเว็บ
+        // รวมการทำงานเมื่อโหลดหน้าเว็บที่จุดเดียวเพื่อความเสถียร
         window.addEventListener("load", () => {
             console.log("Initializing Application...");
             fetchVideos();
             
-            // ตรวจสอบ SDK
-            const lk = window.LivekitClient || window.LiveKitClient || window.LiveKit;
-            if (!lk) {
-                console.warn("LiveKit not immediately found, retrying...");
-                const s = document.createElement('script');
-                s.src = "https://unpkg.com/livekit-client@2.0.4/dist/livekit-client.umd.min.js";
-                s.onload = () => { 
-                    console.log("LiveKit SDK recovered ✅"); 
-                    checkAutoJoin(); 
-                };
-                document.head.appendChild(s);
-            } else {
-                console.log("LiveKit SDK ready ✅");
-                checkAutoJoin();
-            }
+            // ตรวจสอบการโหลด SDK แบบหน่วงเวลาเล็กน้อยกรณีเครือข่ายช้า
+            setTimeout(() => {
+                const lk = window.LivekitClient;
+                if (!lk) {
+                    console.warn("LiveKit not immediately found, checking again...");
+                } else {
+                    console.log("LiveKit SDK ready ✅ Namespace:", Object.keys(window).filter(k=>k.toLowerCase().includes('livekit')));
+                    checkAutoJoin();
+                }
+            }, 500);
         });
     </script>
     <script src="https://www.youtube.com/iframe_api"></script>
