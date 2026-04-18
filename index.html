@@ -321,7 +321,7 @@
                     if (isAgoraLoaded()) {
                         clearInterval(interval);
                         resolve(true);
-                    } else if (attempts > 80) { // Timeout after ~8 seconds
+                    } else if (attempts > 150) { // Timeout after ~15 seconds
                         clearInterval(interval);
                         console.error("Agora SDK failed to load within timeout.");
                         resolve(false);
@@ -648,9 +648,11 @@
         }
 
         lucide.createIcons();
-        window.onload = () => {
+        
+        // แก้ไขจากการใช้ window.onload เป็น addEventListener เพื่อความเสถียร
+        window.addEventListener("load", () => {
             fetchVideos();
-        };
+        });
     </script>
     <script src="https://www.youtube.com/iframe_api"></script>
 </body>
