@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <!-- 1. โหลด SDK v1.15.4 ซึ่งรองรับ Global UMD สำหรับ window.LivekitClient -->
-    <script src="https://cdn.jsdelivr.net/npm/livekit-client@1.15.4/dist/livekit-client.umd.min.js"></script>
+    <!-- 1. โหลด SDK v2.0.4 (แก้ปัญหา getUserMedia read-only error ใน v1) -->
+    <script src="https://unpkg.com/livekit-client@2.0.4/dist/livekit-client.umd.min.js"></script>
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (LiveKit Stable)</title>
+    <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (LiveKit Fix)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -64,6 +64,7 @@
             border: 3px solid var(--pop-black);
             font-weight: 800;
             text-transform: uppercase;
+            transition: all 0.2s;
         }
 
         .cat-pill.active { background: var(--pop-cyan); transform: rotate(-2deg); box-shadow: 4px 4px 0px 0px var(--pop-black); }
@@ -258,7 +259,7 @@
         </div>
     </div>
 
-    <!-- Video Player Modal (YouTube) -->
+    <!-- YouTube Video Modal -->
     <div id="video-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
         <div class="relative w-full max-w-4xl bg-white border-8 border-black pop-shadow overflow-hidden">
@@ -319,22 +320,22 @@
             if (liveModal) liveModal.classList.remove('hidden');
 
             try {
-                // 1. Fetch Token จาก Cloudflare Worker ที่คุณให้มา
+                // 1. Fetch Token
                 const response = await fetch(`${WORKER_URL}?room=${encodeURIComponent(title)}&role=${role}`)
-                    .catch(err => { throw new Error("Worker Connection Failed. Check CORS in your Worker."); });
+                    .catch(err => { throw new Error("Worker Connection Failed (CORS หรือ URL ผิด)"); });
                 
-                if (!response.ok) throw new Error("Worker Error: " + response.status);
+                if (!response.ok) throw new Error("Server Error: " + response.status);
                 
                 const data = await response.json();
                 const token = data.token;
 
-                if (!token) throw new Error("Token was not found in response.");
+                if (!token) throw new Error("ไม่ได้รับ Token จากระบบ");
 
-                // 2. Setup Room (v1 style)
-                const LK = window.LivekitClient;
+                // 2. Setup Room (v2 Robust Check)
+                const LK = window.LivekitClient || window.LiveKitClient;
                 const RoomClass = LK?.Room;
                 if (!RoomClass) {
-                    throw new Error("LiveKit SDK Namespace Error. Check your script source.");
+                    throw new Error("หา Class Room ของ LiveKit ไม่เจอ (Namespace Error)");
                 }
 
                 livekitRoom = new RoomClass({
@@ -344,7 +345,7 @@
 
                 const LKEvents = LK.RoomEvent;
 
-                // Subscribe events
+                // Subscribe tracks (Viewer)
                 livekitRoom.on(LKEvents.TrackSubscribed, (track, publication, participant) => {
                     if (track.kind === 'video') {
                         attachTrack(track, participant.sid);
@@ -353,6 +354,7 @@
                     }
                 });
 
+                // Local track publish (Host)
                 livekitRoom.on(LKEvents.LocalTrackPublished, (publication) => {
                     if (publication.kind === 'video' && publication.track) {
                         attachTrack(publication.track, 'local');
@@ -368,7 +370,7 @@
                 livekitRoom.on(LKEvents.ParticipantConnected, () => updateParticipantsCount());
                 livekitRoom.on(LKEvents.ParticipantDisconnected, () => updateParticipantsCount());
 
-                // 3. Connect to Server
+                // 3. Connect
                 await livekitRoom.connect(LK_SERVER_URL.trim(), token);
                 
                 if (statusEl) statusEl.innerText = (role === 'host' ? "🔥 HOSTING LIVE" : "👀 VIEWING LIVE");
@@ -386,13 +388,10 @@
 
             } catch (error) {
                 console.error("LiveKit connection error:", error);
-                
                 let errorMsg = error.message;
-                // ดักจับข้อความ error พิเศษจากการยืนยันสิทธิ์
-                if (errorMsg.includes("401") || errorMsg.includes("invalid API key") || errorMsg.includes("Unauthorized")) {
-                    errorMsg = "AUTH ERROR: API Key/Secret ใน Worker ไม่ตรงกับ Project ID";
+                if (errorMsg.includes("401") || errorMsg.includes("Unauthorized")) {
+                    errorMsg = "AUTH ERROR: API Key ไม่ถูกต้อง";
                 }
-                
                 if (statusEl) statusEl.innerText = "ERROR!";
                 showToast("เชื่อมต่อไม่สำเร็จ: " + errorMsg);
                 setTimeout(() => closeLive(false), 4000);
@@ -430,7 +429,8 @@
             const countEl = document.getElementById('live-viewer-count');
             if (!countEl) return;
             
-            const count = (livekitRoom.participants?.size ?? 0) + 1;
+            // v2: numParticipants property is safer
+            const count = livekitRoom.numParticipants || (livekitRoom.remoteParticipants?.size ?? 0) + 1;
             countEl.innerText = count;
         }
 
@@ -699,11 +699,11 @@
             fetchVideos();
             
             setTimeout(() => {
-                const lk = window.LivekitClient;
+                const lk = window.LivekitClient || window.LiveKitClient;
                 if (!lk) {
                     console.warn("LiveKit not immediately found, checking again...");
                 } else {
-                    console.log("LiveKit SDK ready ✅ Namespace:", Object.keys(window).filter(k=>k.toLowerCase().includes('livekit')));
+                    console.log("LiveKit SDK ready ✅");
                     checkAutoJoin();
                 }
             }, 500);
