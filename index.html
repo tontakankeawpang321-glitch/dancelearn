@@ -6,7 +6,7 @@
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (LiveKit v1 Stable)</title>
+    <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (LiveKit Stable)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -305,7 +305,7 @@
         async function startLiveKitSession(role, roomName = null) {
             activeRole = role;
             const titleInput = document.getElementById('live-title-input');
-            const title = roomName || (titleInput ? titleInput.value.trim() : "POP DANCE LIVE") || "POP DANCE LIVE";
+            const title = (roomName || (titleInput ? titleInput.value.trim() : "POP DANCE LIVE") || "POP DANCE LIVE").replace(/\s+/g, '-');
 
             closeCreateLive();
             
@@ -319,20 +319,22 @@
             if (liveModal) liveModal.classList.remove('hidden');
 
             try {
-                // 1. Fetch Token
+                // 1. Fetch Token จาก Cloudflare Worker ที่คุณให้มา
                 const response = await fetch(`${WORKER_URL}?room=${encodeURIComponent(title)}&role=${role}`)
-                    .catch(err => { throw new Error("Worker Connection Failed (Check CORS)"); });
+                    .catch(err => { throw new Error("Worker Connection Failed. Check CORS in your Worker."); });
+                
+                if (!response.ok) throw new Error("Worker Error: " + response.status);
                 
                 const data = await response.json();
                 const token = data.token;
 
-                if (!token) throw new Error("ไม่ได้รับ Token จากระบบ");
+                if (!token) throw new Error("Token was not found in response.");
 
-                // 2. Setup Room for v1 (Global Namespace)
+                // 2. Setup Room (v1 style)
                 const LK = window.LivekitClient;
                 const RoomClass = LK?.Room;
                 if (!RoomClass) {
-                    throw new Error(`SDK ไม่พร้อม — window keys: ${Object.keys(window).filter(k=>k.toLowerCase().includes('livekit'))}`);
+                    throw new Error("LiveKit SDK Namespace Error. Check your script source.");
                 }
 
                 livekitRoom = new RoomClass({
@@ -342,7 +344,7 @@
 
                 const LKEvents = LK.RoomEvent;
 
-                // Subscribe to tracks
+                // Subscribe events
                 livekitRoom.on(LKEvents.TrackSubscribed, (track, publication, participant) => {
                     if (track.kind === 'video') {
                         attachTrack(track, participant.sid);
@@ -351,7 +353,6 @@
                     }
                 });
 
-                // Subscribe to local published tracks
                 livekitRoom.on(LKEvents.LocalTrackPublished, (publication) => {
                     if (publication.kind === 'video' && publication.track) {
                         attachTrack(publication.track, 'local');
@@ -367,8 +368,9 @@
                 livekitRoom.on(LKEvents.ParticipantConnected, () => updateParticipantsCount());
                 livekitRoom.on(LKEvents.ParticipantDisconnected, () => updateParticipantsCount());
 
-                // 3. Connect
-                await livekitRoom.connect(LK_SERVER_URL, token);
+                // 3. Connect to Server
+                await livekitRoom.connect(LK_SERVER_URL.trim(), token);
+                
                 if (statusEl) statusEl.innerText = (role === 'host' ? "🔥 HOSTING LIVE" : "👀 VIEWING LIVE");
                 updateParticipantsCount();
 
@@ -376,7 +378,6 @@
                     const hostCtrl = document.getElementById('host-controls');
                     if (hostCtrl) hostCtrl.classList.remove('hidden');
                     
-                    // Enable camera and mic
                     await livekitRoom.localParticipant.setCameraEnabled(true);
                     await livekitRoom.localParticipant.setMicrophoneEnabled(true);
                     
@@ -385,9 +386,16 @@
 
             } catch (error) {
                 console.error("LiveKit connection error:", error);
+                
+                let errorMsg = error.message;
+                // ดักจับข้อความ error พิเศษจากการยืนยันสิทธิ์
+                if (errorMsg.includes("401") || errorMsg.includes("invalid API key") || errorMsg.includes("Unauthorized")) {
+                    errorMsg = "AUTH ERROR: API Key/Secret ใน Worker ไม่ตรงกับ Project ID";
+                }
+                
                 if (statusEl) statusEl.innerText = "ERROR!";
-                showToast("เชื่อมต่อไม่สำเร็จ: " + error.message);
-                setTimeout(() => closeLive(false), 2000);
+                showToast("เชื่อมต่อไม่สำเร็จ: " + errorMsg);
+                setTimeout(() => closeLive(false), 4000);
             }
         }
 
@@ -422,7 +430,6 @@
             const countEl = document.getElementById('live-viewer-count');
             if (!countEl) return;
             
-            // v1 style uses participants Map
             const count = (livekitRoom.participants?.size ?? 0) + 1;
             countEl.innerText = count;
         }
@@ -509,7 +516,7 @@
                     listContainer.innerHTML = `
                         <div class="col-span-full py-10 text-center bg-red-100 border-4 border-black p-6">
                             <p class="text-xl font-black uppercase italic">ไม่สามารถดึงข้อมูลห้องได้ในขณะนี้!</p>
-                            <button onclick="openLiveLobby()" class="mt-4 px-6 py-2 bg-black text-white font-black uppercase">ลองใหม่อีกครั้ง</button>
+                            <button onclick="openLiveLobby()" class="mt-4 px-6 py-2 bg-black text-white font-black uppercase">ลองใหมีกครั้ง</button>
                         </div>
                     `;
                 }
@@ -687,12 +694,10 @@
             setTimeout(() => msg.remove(), 3000);
         }
 
-        // รวมการทำงานเมื่อโหลดหน้าเว็บที่จุดเดียวเพื่อความเสถียร
         window.addEventListener("load", () => {
             console.log("Initializing Application...");
             fetchVideos();
             
-            // ตรวจสอบการโหลด SDK แบบหน่วงเวลาเล็กน้อยกรณีเครือข่ายช้า
             setTimeout(() => {
                 const lk = window.LivekitClient;
                 if (!lk) {
