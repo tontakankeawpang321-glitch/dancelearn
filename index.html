@@ -1,19 +1,21 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+    <!-- 1. ย้ายมาไว้บนสุดเพื่อความเสถียรในการโหลด -->
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (LiveKit Lobby Edition)</title>
+    <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (LiveKit Optimized)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- LiveKit Client SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 
     <script>
         window.addEventListener("load", () => {
-            if (typeof LiveKitClient === "undefined") {
+            // ตรวจสอบความพร้อมของ SDK
+            const isAvailable = typeof window.LiveKitClient !== "undefined" || typeof window.LiveKit !== "undefined";
+            if (!isAvailable) {
                 console.error("LiveKit โหลดไม่เข้า ❌");
                 const errorBox = document.createElement('div');
                 errorBox.className = "fixed top-5 left-1/2 -translate-x-1/2 z-[200] bg-red-600 text-white px-6 py-4 border-4 border-black font-black uppercase pop-shadow-sm text-center";
@@ -104,7 +106,6 @@
             100% { transform: scale(0.95); opacity: 1; }
         }
 
-        /* LiveKit Video Styles */
         #video-layer {
             position: absolute;
             inset: 0;
@@ -294,7 +295,6 @@
             const params = new URLSearchParams(window.location.search);
             const autoTitle = params.get('room');
             if (autoTitle) {
-                // Auto join logic from direct link
                 joinLiveFromLobby(autoTitle);
             }
         }
@@ -309,20 +309,28 @@
             document.getElementById('live-modal').classList.remove('hidden');
 
             try {
-                // 1. Fetch Token from Cloudflare Worker
+                // 1. Fetch Token
                 const response = await fetch(`${WORKER_URL}?room=${encodeURIComponent(title)}&role=${role}`);
                 const data = await response.json();
                 const token = data.token;
 
                 if (!token) throw new Error("ไม่ได้รับ Token จากระบบ");
 
-                // 2. Setup Room
-                livekitRoom = new LiveKitClient.Room({
+                // 2. Setup Room with Dynamic Class Check (Case Sensitive Fix)
+                const RoomClass = window.LiveKitClient?.Room || window.LiveKit?.Room;
+                if (!RoomClass) {
+                    throw new Error("หา Class Room ของ LiveKit ไม่เจอ");
+                }
+
+                livekitRoom = new RoomClass({
                     adaptiveStream: true,
                     dynacast: true,
                 });
 
-                livekitRoom.on(LiveKitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
+                // Get Event object dynamically too
+                const LKEvents = window.LiveKitClient?.RoomEvent || window.LiveKit?.RoomEvent;
+
+                livekitRoom.on(LKEvents.TrackSubscribed, (track, publication, participant) => {
                     if (track.kind === 'video') {
                         attachTrack(track, participant.sid);
                     } else if (track.kind === 'audio') {
@@ -330,14 +338,14 @@
                     }
                 });
 
-                livekitRoom.on(LiveKitClient.RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+                livekitRoom.on(LKEvents.TrackUnsubscribed, (track, publication, participant) => {
                     track.detach();
                     const el = document.getElementById(`video-${participant.sid}`);
                     if (el) el.remove();
                 });
 
-                livekitRoom.on(LiveKitClient.RoomEvent.ParticipantConnected, () => updateParticipantsCount());
-                livekitRoom.on(LiveKitClient.RoomEvent.ParticipantDisconnected, () => updateParticipantsCount());
+                livekitRoom.on(LKEvents.ParticipantConnected, () => updateParticipantsCount());
+                livekitRoom.on(LKEvents.ParticipantDisconnected, () => updateParticipantsCount());
 
                 // 3. Connect
                 await livekitRoom.connect(LK_SERVER_URL, token);
@@ -354,7 +362,6 @@
                         attachTrack(localTrackPub.track, 'local');
                     }
                     
-                    // Register room to GAS Lobby
                     await registerRoom(title);
                 }
 
@@ -421,7 +428,6 @@
             document.getElementById('video-layer').innerHTML = '';
             document.getElementById('host-controls').classList.add('hidden');
             lucide.createIcons();
-            // Refresh lobby if visible
             if (document.getElementById('active-lives-container')) {
                 openLiveLobby();
             }
@@ -595,12 +601,13 @@
 
         function showToast(text) {
             const msg = document.createElement('div');
-            msg.className = "fixed top-10 left-1/2 -translate-x-1/2 bg-black text-white px-6 py-3 border-4 border-pop-cyan font-black z-[200] uppercase italic pop-shadow-sm";
+            msg.className = "fixed top-10 left-1/2 -translate-x-1/2 bg-black text-white px-6 py-3 border-4 border-pop-cyan font-black z-[200] uppercase italic pop-shadow-sm text-center";
             msg.innerText = text;
             document.body.appendChild(msg);
             setTimeout(() => msg.remove(), 3000);
         }
 
+        // ใช้ addEventListener เพื่อความเสถียร
         window.addEventListener("load", () => {
             fetchVideos();
         });
