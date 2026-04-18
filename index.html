@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <!-- 1. โหลด SDK v2.0.4 (แก้ปัญหา getUserMedia read-only error ใน v1) -->
-    <script src="https://unpkg.com/livekit-client@2.0.4/dist/livekit-client.umd.min.js"></script>
+    <!-- 1. โหลด SDK v2.0.4 ผ่าน JSDelivr เพื่อความเสถียรสูงสุดในไทย -->
+    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.0.4/dist/livekit-client.umd.min.js"></script>
     
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -331,11 +331,12 @@
 
                 if (!token) throw new Error("ไม่ได้รับ Token จากระบบ");
 
-                // 2. Setup Room (v2 Robust Check)
-                const LK = window.LivekitClient || window.LiveKitClient;
+                // 2. Setup Room (v2 Robust Check) - แก้ปัญหา Namespace Error
+                const LK = window.LivekitClient || window.LiveKitClient || window.LiveKit;
                 const RoomClass = LK?.Room;
                 if (!RoomClass) {
-                    throw new Error("หา Class Room ของ LiveKit ไม่เจอ (Namespace Error)");
+                    const keys = Object.keys(window).filter(k => k.toLowerCase().includes('livekit'));
+                    throw new Error(`หา Class Room ของ LiveKit ไม่เจอ (window keys: ${keys.join(', ')})`);
                 }
 
                 livekitRoom = new RoomClass({
@@ -694,16 +695,17 @@
             setTimeout(() => msg.remove(), 3000);
         }
 
+        // รวมการทำงานเมื่อโหลดหน้าเว็บ
         window.addEventListener("load", () => {
             console.log("Initializing Application...");
             fetchVideos();
             
             setTimeout(() => {
-                const lk = window.LivekitClient || window.LiveKitClient;
+                const lk = window.LivekitClient || window.LiveKitClient || window.LiveKit;
                 if (!lk) {
                     console.warn("LiveKit not immediately found, checking again...");
                 } else {
-                    console.log("LiveKit SDK ready ✅");
+                    console.log("LiveKit SDK ready ✅ Namespace:", Object.keys(window).filter(k=>k.toLowerCase().includes('livekit')));
                     checkAutoJoin();
                 }
             }, 500);
