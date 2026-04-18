@@ -3,29 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (Agora & Real-time)</title>
+    <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (LiveKit Auto Token)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <!-- Agora SDK -->
-    <script src="https://download.agora.io/sdk/release/AgoraRTC_N.js" defer></script>
-    
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+    <!-- LiveKit Client SDK -->
+    <script src="https://unpkg.com/livekit-client/dist/livekit-client.umd.min.js"></script>
 
     <script>
         window.addEventListener("load", () => {
-            if (typeof AgoraRTC === "undefined") {
-                console.error("Agora โหลดไม่เข้า ❌");
+            if (typeof LiveKitClient === "undefined") {
+                console.error("LiveKit โหลดไม่เข้า ❌");
                 const errorBox = document.createElement('div');
-                errorBox.className = "fixed top-5 left-1/2 -translate-x-1/2 z-[200] bg-red-600 text-white px-6 py-4 border-4 border-black font-black uppercase pop-shadow-sm";
-                errorBox.innerHTML = "โหลดระบบไลฟ์ไม่สำเร็จ! กรุณาลองรีเฟรชหน้าเว็บ ❌";
+                errorBox.className = "fixed top-5 left-1/2 -translate-x-1/2 z-[200] bg-red-600 text-white px-6 py-4 border-4 border-black font-black uppercase pop-shadow-sm text-center";
+                errorBox.innerHTML = "โหลดระบบ LiveKit ไม่สำเร็จ! ❌<br>กรุณารีเฟรชหรือเช็คการเชื่อมต่อ";
                 document.body.appendChild(errorBox);
             } else {
-                console.log("Agora พร้อมใช้งาน ✅");
+                console.log("LiveKit พร้อมใช้งาน ✅");
+                checkAutoJoin();
             }
         });
     </script>
@@ -108,14 +104,24 @@
             100% { transform: scale(0.95); opacity: 1; }
         }
 
-        #agora-video-container {
+        /* LiveKit Video Styles */
+        #video-layer {
+            position: absolute;
+            inset: 0;
             background: #000;
-            position: relative;
+            z-index: 1;
         }
-        
+
+        #video-layer video {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+
         .live-overlay {
             position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
+            inset: 0;
             pointer-events: none;
             z-index: 10;
         }
@@ -157,7 +163,7 @@
                     </div>
                     <div class="flex flex-col">
                         <h1 class="text-3xl font-black tracking-tighter text-black uppercase italic leading-none" style="-webkit-text-stroke: 1px white;">สอนเต้นออนไลน์</h1>
-                        <p class="text-[11px] font-black bg-black text-white px-2 mt-1 inline-block self-start uppercase">Learn & Live with Agora!</p>
+                        <p class="text-[11px] font-black bg-black text-white px-2 mt-1 inline-block self-start uppercase">DANCE & AUTO LIVE!</p>
                     </div>
                 </div>
                 
@@ -209,43 +215,41 @@
     </nav>
 
     <!-- Live Stream Modal -->
-    <div id="live-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-0 md:p-4">
-        <div class="absolute inset-0 bg-black/90 backdrop-blur-md" onclick="closeLive()"></div>
-        <div class="relative w-full max-w-lg bg-black border-0 md:border-8 border-black pop-shadow h-full md:h-auto aspect-[9/16] md:aspect-video flex flex-col overflow-hidden">
+    <div id="live-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-0">
+        <div class="absolute inset-0 bg-black/95 backdrop-blur-md" onclick="closeLive()"></div>
+        <div class="relative w-full max-w-lg bg-black h-full md:h-[90vh] md:max-h-[800px] md:border-8 border-black pop-shadow flex flex-col overflow-hidden">
             
-            <div id="agora-video-container" class="flex-1 w-full h-full relative">
-                <!-- Overlay UI -->
-                <div class="live-overlay p-4 flex flex-col justify-between h-full pointer-events-none">
-                    <div class="flex justify-between items-start pointer-events-auto">
-                        <div class="flex items-center gap-2">
-                            <div class="live-badge">LIVE</div>
-                            <div class="viewer-count">
-                                <i data-lucide="eye" class="w-4 h-4"></i>
-                                <span id="live-viewer-count">0</span>
-                            </div>
-                        </div>
-                        <button onclick="closeLive()" class="bg-black/40 text-white w-10 h-10 rounded-full flex items-center justify-center border border-white/20">
-                            <i data-lucide="x" class="w-6 h-6"></i>
-                        </button>
-                    </div>
+            <!-- Video Layer -->
+            <div id="video-layer"></div>
 
-                    <div class="space-y-4 pointer-events-auto">
-                        <div class="flex items-end justify-between">
-                            <div class="flex-1">
-                                <h3 id="live-room-title" class="text-white font-black italic text-2xl uppercase tracking-tighter drop-shadow-lg">ROOM TITLE</h3>
-                                <p id="live-room-host" class="text-white/80 font-bold text-sm uppercase drop-shadow-lg">@USERNAME</p>
-                            </div>
-                            <div class="flex flex-col gap-4 items-center">
-                                <button class="w-12 h-12 bg-white/20 rounded-full border border-white/40 flex items-center justify-center text-white backdrop-blur-md">
-                                    <i data-lucide="heart" class="w-7 h-7"></i>
-                                </button>
-                                <button class="w-12 h-12 bg-white/20 rounded-full border border-white/40 flex items-center justify-center text-white backdrop-blur-md">
-                                    <i data-lucide="share-2" class="w-7 h-7"></i>
-                                </button>
-                            </div>
+            <!-- Overlay UI Layer -->
+            <div class="live-overlay p-4 flex flex-col justify-between h-full pointer-events-none">
+                <div class="flex justify-between items-start pointer-events-auto">
+                    <div class="flex items-center gap-2">
+                        <div class="live-badge">LIVE</div>
+                        <div class="viewer-count">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                            <span id="live-viewer-count">0</span>
                         </div>
-                        <div class="bg-black/20 backdrop-blur-sm border-t border-white/10 p-2">
-                            <p class="text-white/60 text-[10px] font-bold">POWERED BY AGORA RTC & FIRESTORE</p>
+                    </div>
+                    <button onclick="closeLive()" class="bg-black/40 text-white w-10 h-10 rounded-full flex items-center justify-center border border-white/20">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <div class="space-y-4 pointer-events-auto">
+                    <div class="flex items-end justify-between">
+                        <div class="flex-1">
+                            <h3 id="live-room-title" class="text-white font-black italic text-2xl uppercase tracking-tighter drop-shadow-lg">ROOM NAME</h3>
+                            <p id="live-status" class="text-white/80 font-bold text-sm uppercase drop-shadow-lg">CONNECTING...</p>
+                        </div>
+                        <div class="flex flex-col gap-4 items-center">
+                            <button onclick="copyLiveLink()" class="w-12 h-12 bg-white/20 rounded-full border border-white/40 flex items-center justify-center text-white backdrop-blur-md">
+                                <i data-lucide="share-2" class="w-7 h-7"></i>
+                            </button>
+                            <button id="host-controls" class="hidden w-12 h-12 bg-pop-cyan rounded-full border border-black flex items-center justify-center text-black pop-shadow-sm">
+                                <i data-lucide="settings" class="w-7 h-7"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -253,251 +257,166 @@
         </div>
     </div>
 
-    <!-- Create Live Modal -->
+    <!-- Create/Join Modal -->
     <div id="create-live-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCreateLive()"></div>
         <div class="relative w-full max-w-md bg-white border-8 border-black pop-shadow p-8">
-            <h2 class="text-3xl font-black uppercase italic tracking-tighter mb-6">เริ่มไลฟ์สดของคุณ!</h2>
+            <h2 id="modal-live-type" class="text-3xl font-black uppercase italic tracking-tighter mb-6">เริ่มไลฟ์สด (Auto Token)</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="block font-black uppercase text-sm mb-1">ชื่อห้องไลฟ์สด</label>
-                    <input type="text" id="live-title-input" placeholder="เช่น เต้นลืมโลกกับครูเป็ด..." class="w-full border-4 border-black p-3 font-bold focus:bg-yellow-100 outline-none">
+                    <label class="block font-black uppercase text-xs mb-1">ชื่อห้องเต้น</label>
+                    <input type="text" id="live-title-input" placeholder="ใส่ชื่อห้องที่นี่..." class="w-full border-4 border-black p-3 font-bold focus:bg-yellow-100 outline-none">
                 </div>
-                <button onclick="startNewLive()" class="w-full py-4 bg-cyan-400 border-4 border-black font-black uppercase text-xl pop-shadow-sm active:translate-x-1 active:translate-y-1 transition-all">
-                    GO LIVE NOW!
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Video Player Modal (YouTube) -->
-    <div id="video-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="relative w-full max-w-4xl bg-white border-8 border-black pop-shadow overflow-hidden">
-            <button onclick="closeModal()" class="absolute top-4 right-4 z-[110] bg-white border-4 border-black hover:bg-red-500 hover:text-white w-12 h-12 flex items-center justify-center transition-all pop-shadow-sm">
-                <i data-lucide="x" class="w-8 h-8"></i>
-            </button>
-            <div class="aspect-video bg-black border-b-8 border-black">
-                <div id="player-container" class="w-full h-full"></div>
-            </div>
-            <div class="p-8 text-center bg-yellow-400">
-                <h2 id="modal-title" class="text-2xl md:text-4xl font-black text-black mb-6 uppercase italic tracking-tighter leading-none">ชื่อบทเรียน</h2>
-                <button id="modal-fav-btn" onclick="toggleFavoriteCurrent()" class="px-10 py-4 bg-white border-4 border-black font-black text-lg uppercase flex items-center gap-3 mx-auto transition-all pop-shadow-sm active:translate-x-1 active:translate-y-1 active:shadow-none">
-                    <i data-lucide="heart" class="w-6 h-6"></i>
-                    <span>บันทึกท่านี้!</span>
-                </button>
+                <div class="flex gap-4">
+                    <button onclick="startLiveKitSession('host')" class="flex-1 py-4 bg-cyan-400 border-4 border-black font-black uppercase text-xl pop-shadow-sm active:translate-x-1 active:translate-y-1 transition-all">
+                        เปิดกล้องสอน
+                    </button>
+                    <button onclick="startLiveKitSession('viewer')" class="flex-1 py-4 bg-white border-4 border-black font-black uppercase text-xl pop-shadow-sm active:translate-x-1 active:translate-y-1 transition-all">
+                        เข้าชมห้อง
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         // --- CONFIG ---
-        const AGORA_APP_ID = "0c16bd58e44644e0b125be3b3b53df93";
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTe2E7RJNm4g58PUOorzYdo7aGTGuWTTe4MpZzITqM9pSnHA-9Wi3foVDFhrfH930g7dBF08hiP2UwE/pub?output=csv";
+        const WORKER_URL = "https://dancelive.tontakankeawpang.workers.dev"; 
+        const LK_SERVER_URL = "wss://live-yeitmlw1.livekit.cloud";
 
-        // Firebase Configuration from Environment
-        const firebaseConfig = JSON.parse(__firebase_config);
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-        let agoraClient = null;
-        let localTracks = { videoTrack: null, audioTrack: null };
+        let livekitRoom = null;
         let allVideos = [];
         let favorites = JSON.parse(localStorage.getItem('dance_pop_favs') || '[]');
         let currentVideo = null;
         let ytPlayer = null;
-        let activeLives = [];
-        let currentUser = null;
-        let currentLiveDocId = null;
+        let activeRole = 'viewer';
 
-        // --- Firebase Auth & Listener ---
-        async function initApp() {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await auth.signInWithCustomToken(__initial_auth_token);
-                } else {
-                    await auth.signInAnonymously();
-                }
-            } catch (err) {
-                console.error("Auth failed:", err);
+        // --- LiveKit Core Logic ---
+
+        function checkAutoJoin() {
+            const params = new URLSearchParams(window.location.search);
+            const autoTitle = params.get('room');
+            if (autoTitle) {
+                document.getElementById('live-title-input').value = autoTitle;
+                openCreateLive();
+                document.getElementById('modal-live-type').innerText = "เข้าชมห้อง: " + autoTitle;
             }
-
-            auth.onAuthStateChanged((user) => {
-                currentUser = user;
-                if (user) {
-                    listenToLives();
-                }
-            });
         }
 
-        function listenToLives() {
-            // Listen to live sessions in real-time
-            const livesCol = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lives');
-            livesCol.onSnapshot((snapshot) => {
-                activeLives = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                // Update UI if in lobby
-                if (document.getElementById('live-zone-title')) {
-                    renderLiveList();
-                }
-            }, (err) => console.error("Listen lives failed:", err));
-        }
+        async function startLiveKitSession(role) {
+            activeRole = role;
+            const title = document.getElementById('live-title-input').value.trim() || "POP DANCE LIVE";
 
-        // --- Agora Loading System ---
-        function isAgoraLoaded() { return typeof AgoraRTC !== 'undefined'; }
+            closeCreateLive();
+            document.getElementById('live-room-title').innerText = title.toUpperCase();
+            document.getElementById('live-status').innerText = "GETTING TOKEN...";
+            document.getElementById('live-modal').classList.remove('hidden');
 
-        async function ensureAgoraReady() {
-            if (isAgoraLoaded()) return true;
-            return new Promise((resolve) => {
-                let attempts = 0;
-                const interval = setInterval(() => {
-                    attempts++;
-                    if (isAgoraLoaded()) { clearInterval(interval); resolve(true); }
-                    else if (attempts > 150) { clearInterval(interval); resolve(false); }
-                }, 100);
-            });
-        }
-
-        function initAgora() {
-            if (!isAgoraLoaded()) return false;
-            if (agoraClient) return true;
             try {
-                agoraClient = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
-                agoraClient.on("user-published", async (user, mediaType) => {
-                    await agoraClient.subscribe(user, mediaType);
-                    if (mediaType === "video") {
-                        const remotePlayerContainer = document.createElement("div");
-                        remotePlayerContainer.id = user.uid.toString();
-                        remotePlayerContainer.className = "w-full h-full";
-                        document.getElementById("agora-video-container").append(remotePlayerContainer);
-                        user.videoTrack.play(remotePlayerContainer);
-                    }
-                    if (mediaType === "audio") { user.audioTrack.play(); }
+                // 1. Fetch Token from Cloudflare Worker
+                const response = await fetch(`${WORKER_URL}?room=${encodeURIComponent(title)}&role=${role}`);
+                const data = await response.json();
+                const token = data.token;
+
+                if (!token) throw new Error("ไม่ได้รับ Token จากระบบ");
+
+                // 2. Setup Room
+                livekitRoom = new LiveKitClient.Room({
+                    adaptiveStream: true,
+                    dynacast: true,
                 });
-                agoraClient.on("user-unpublished", (user) => {
-                    const el = document.getElementById(user.uid.toString());
+
+                livekitRoom.on(LiveKitClient.RoomEvent.TrackSubscribed, (track, publication, participant) => {
+                    if (track.kind === 'video') {
+                        attachTrack(track, participant.sid);
+                    } else if (track.kind === 'audio') {
+                        track.attach();
+                    }
+                });
+
+                livekitRoom.on(LiveKitClient.RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+                    track.detach();
+                    const el = document.getElementById(`video-${participant.sid}`);
                     if (el) el.remove();
                 });
-                return true;
-            } catch (e) { return false; }
-        }
 
-        async function startNewLive() {
-            if (!currentUser) return;
-            const isReady = await ensureAgoraReady();
-            if (!isReady) {
-                showToast("ระบบไลฟ์สดยังไม่พร้อมใช้งาน");
-                return;
-            }
+                livekitRoom.on(LiveKitClient.RoomEvent.ParticipantConnected, () => updateParticipantsCount());
+                livekitRoom.on(LiveKitClient.RoomEvent.ParticipantDisconnected, () => updateParticipantsCount());
 
-            const titleInput = document.getElementById('live-title-input');
-            const title = titleInput.value.trim() || "POP DANCE LIVE";
-            closeCreateLive();
-            
-            // Create real roomId
-            const roomId = "room_" + Date.now();
-            
-            document.getElementById('live-room-title').innerText = title.toUpperCase();
-            document.getElementById('live-room-host').innerText = "@YOU";
-            document.getElementById('live-modal').classList.remove('hidden');
+                // 3. Connect using predefined URL
+                await livekitRoom.connect(LK_SERVER_URL, token);
+                document.getElementById('live-status').innerText = (role === 'host' ? "🔥 HOSTING LIVE" : "👀 VIEWING LIVE");
+                updateParticipantsCount();
 
-            try {
-                initAgora();
-                agoraClient.setClientRole("host");
-                await agoraClient.join(AGORA_APP_ID, roomId, null, null);
-                
-                localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
-                localTracks.videoTrack = await AgoraRTC.createCameraVideoTrack();
-                
-                const localContainer = document.createElement("div");
-                localContainer.id = "local-player";
-                localContainer.className = "w-full h-full";
-                document.getElementById("agora-video-container").append(localContainer);
-                
-                localTracks.videoTrack.play(localContainer);
-                await agoraClient.publish(Object.values(localTracks));
-                
-                // Save to Firestore for Real-time sync
-                const liveRef = await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lives').add({
-                    title: title.toUpperCase(),
-                    creator: currentUser.uid,
-                    roomId: roomId,
-                    viewers: Math.floor(Math.random() * 20) + 1, // Simulated base viewers
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                currentLiveDocId = liveRef.id;
+                if (role === 'host') {
+                    document.getElementById('host-controls').classList.remove('hidden');
+                    await livekitRoom.localParticipant.setCameraEnabled(true);
+                    await livekitRoom.localParticipant.setMicrophoneEnabled(true);
 
-            } catch (e) {
-                console.error("Agora host join failed", e);
+                    const localTrackPub = Array.from(livekitRoom.localParticipant.videoTracks.values())[0];
+                    if (localTrackPub && localTrackPub.track) {
+                        attachTrack(localTrackPub.track, 'local');
+                    }
+                }
+
+            } catch (error) {
+                console.error("LiveKit connection error:", error);
+                document.getElementById('live-status').innerText = "ERROR!";
+                showToast("เชื่อมต่อไม่สำเร็จ: " + error.message);
+                setTimeout(closeLive, 2000);
             }
         }
 
-        async function joinLive(roomId, title, creator, docId) {
-            const isReady = await ensureAgoraReady();
-            if (!isReady) return;
-
-            document.getElementById('live-room-title').innerText = title.toUpperCase();
-            document.getElementById('live-room-host').innerText = "@" + creator.substring(0, 6);
-            document.getElementById('live-modal').classList.remove('hidden');
-
-            try {
-                initAgora();
-                agoraClient.setClientRole("audience");
-                await agoraClient.join(AGORA_APP_ID, roomId, null, null);
+        function attachTrack(track, id) {
+            const container = document.getElementById('video-layer');
+            let videoEl = document.getElementById(`video-${id}`);
+            if (!videoEl) {
+                videoEl = track.attach();
+                videoEl.id = `video-${id}`;
+                videoEl.className = "absolute inset-0 w-full h-full object-cover transition-opacity duration-500";
                 
-                // Update viewer count (simplified for demo)
-                const liveRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lives').doc(docId);
-                liveRef.update({ viewers: firebase.firestore.FieldValue.increment(1) });
-                currentLiveDocId = docId;
-
-            } catch (e) {
-                console.error("Agora audience join failed", e);
+                // Mirror Effect for Host
+                if (id === 'local') {
+                    videoEl.style.transform = "scaleX(-1)";
+                }
+                
+                container.appendChild(videoEl);
             }
+        }
+
+        function updateParticipantsCount() {
+            if (!livekitRoom) return;
+            const count = livekitRoom.participants.size + 1;
+            document.getElementById('live-viewer-count').innerText = count;
+        }
+
+        function copyLiveLink() {
+            const room = document.getElementById('live-title-input').value;
+            const shareUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}`;
+            
+            const tempInput = document.createElement("input");
+            document.body.appendChild(tempInput);
+            tempInput.value = shareUrl;
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            
+            showToast("คัดลอกลิงก์แชร์ห้องแล้ว! 🚀");
         }
 
         async function closeLive() {
             document.getElementById('live-modal').classList.add('hidden');
-            if (localTracks.videoTrack) { localTracks.videoTrack.stop(); localTracks.videoTrack.close(); localTracks.videoTrack = null; }
-            if (localTracks.audioTrack) { localTracks.audioTrack.stop(); localTracks.audioTrack.close(); localTracks.audioTrack = null; }
-            if (agoraClient) { try { await agoraClient.leave(); } catch(e) {} }
-            
-            // If I was the host, remove the live from Firestore
-            if (currentLiveDocId) {
-                const liveRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('lives').doc(currentLiveDocId);
-                const doc = await liveRef.get();
-                if (doc.exists && doc.data().creator === currentUser.uid) {
-                    await liveRef.delete();
-                } else {
-                    liveRef.update({ viewers: firebase.firestore.FieldValue.increment(-1) });
-                }
-                currentLiveDocId = null;
+            if (livekitRoom) {
+                await livekitRoom.disconnect();
+                livekitRoom = null;
             }
-
-            const videoContainer = document.getElementById("agora-video-container");
-            videoContainer.innerHTML = `
-                <div class="live-overlay p-4 flex flex-col justify-between h-full pointer-events-none">
-                    <div class="flex justify-between items-start pointer-events-auto">
-                        <div class="flex items-center gap-2">
-                            <div class="live-badge">LIVE</div>
-                            <div class="viewer-count"><i data-lucide="eye" class="w-4 h-4"></i><span id="live-viewer-count">0</span></div>
-                        </div>
-                        <button onclick="closeLive()" class="bg-black/40 text-white w-10 h-10 rounded-full flex items-center justify-center border border-white/20"><i data-lucide="x" class="w-6 h-6"></i></button>
-                    </div>
-                    <div class="space-y-4 pointer-events-auto">
-                        <div class="flex items-end justify-between">
-                            <div class="flex-1">
-                                <h3 id="live-room-title" class="text-white font-black italic text-2xl uppercase tracking-tighter drop-shadow-lg">ROOM TITLE</h3>
-                                <p id="live-room-host" class="text-white/80 font-bold text-sm uppercase drop-shadow-lg">@USERNAME</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            document.getElementById('video-layer').innerHTML = '';
+            document.getElementById('host-controls').classList.add('hidden');
             lucide.createIcons();
         }
 
-        // --- UI Rendering ---
+        // --- Standard UI Content Logic ---
 
         async function fetchVideos() {
             try {
@@ -555,42 +474,19 @@
                 <div class="px-6 mb-12">
                     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
                         <div>
-                            <div class="section-tag mb-2 bg-red-600">REAL-TIME LIVE ZONE!</div>
-                            <h2 id="live-zone-title" class="text-6xl font-black italic uppercase italic">DANCE LOBBY</h2>
+                            <div class="section-tag mb-2 bg-red-600">LIVEKIT DANCE ZONE!</div>
+                            <h2 id="live-zone-title" class="text-6xl font-black italic uppercase italic">LOBBY</h2>
                         </div>
                         <button onclick="openCreateLive()" class="px-8 py-4 bg-pop-green border-4 border-black font-black uppercase text-xl pop-shadow hover:-translate-y-1 transition-all flex items-center gap-3">
-                            <i data-lucide="plus-circle" class="w-8 h-8"></i>เริ่มสร้างไลฟ์เลย!
+                            <i data-lucide="plus-circle" class="w-8 h-8"></i>เริ่มไลฟ์สด
                         </button>
                     </div>
-                    <div id="active-lives-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <!-- Lives will be rendered here -->
+                    <div class="col-span-full py-20 text-center bg-white border-4 border-black pop-shadow">
+                        <p class="text-2xl font-black uppercase italic text-black mb-4">เชื่อมต่อกับระบบอัตโนมัติ</p>
+                        <button onclick="openCreateLive()" class="px-6 py-2 bg-black text-white font-black hover:bg-red-600 transition-all uppercase italic tracking-tighter text-xl">🚀 Create / Join Room</button>
                     </div>
                 </div>
             `;
-            renderLiveList();
-            lucide.createIcons();
-        }
-
-        function renderLiveList() {
-            const listEl = document.getElementById('active-lives-list');
-            if (!listEl) return;
-            if (activeLives.length === 0) {
-                listEl.innerHTML = `<div class="col-span-full py-20 text-center"><p class="text-2xl font-black uppercase italic text-gray-400">ยังไม่มีใครไลฟ์เลย... เป็นคนแรกที่เริ่มเต้นสิ!</p></div>`;
-                return;
-            }
-            listEl.innerHTML = activeLives.map(live => `
-                <div class="bg-white border-4 border-black pop-shadow p-6 relative group">
-                    <div class="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 font-black text-xs pulse-live">LIVE</div>
-                    <div class="aspect-video bg-neutral-200 border-4 border-black mb-4 flex items-center justify-center">
-                        <i data-lucide="video" class="w-12 h-12 text-black/20"></i>
-                    </div>
-                    <h3 class="text-2xl font-black uppercase italic mb-2">${live.title}</h3>
-                    <div class="flex items-center justify-between border-t-4 border-black pt-4">
-                        <span class="font-black text-sm uppercase"><i data-lucide="eye" class="w-4 h-4 inline mr-1"></i>${live.viewers} VIEWERS</span>
-                        <button onclick="joinLive('${live.roomId}', '${live.title}', '${live.creator}', '${live.id}')" class="px-6 py-2 bg-black text-white font-black hover:bg-red-600 transition-all">ENTER</button>
-                    </div>
-                </div>
-            `).join('');
             lucide.createIcons();
         }
 
@@ -639,7 +535,7 @@
 
         function showToast(text) {
             const msg = document.createElement('div');
-            msg.className = "fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 border-4 border-black font-black z-[200] uppercase italic";
+            msg.className = "fixed top-10 left-1/2 -translate-x-1/2 bg-black text-white px-6 py-3 border-4 border-pop-cyan font-black z-[200] uppercase italic pop-shadow-sm";
             msg.innerText = text;
             document.body.appendChild(msg);
             setTimeout(() => msg.remove(), 3000);
@@ -647,7 +543,6 @@
 
         window.addEventListener("load", () => {
             fetchVideos();
-            initApp();
         });
     </script>
     <script src="https://www.youtube.com/iframe_api"></script>
