@@ -1,9 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <!-- 1. ย้ายมาไว้บนสุดเพื่อความเสถียรในการโหลด -->
-    <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
-    
+  <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.0.4/dist/livekit-client.umd.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (LiveKit Optimized)</title>
@@ -11,22 +9,20 @@
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <script>
-        window.addEventListener("load", () => {
-            // ตรวจสอบความพร้อมของ SDK
-            const isAvailable = typeof window.LiveKitClient !== "undefined" || typeof window.LiveKit !== "undefined";
-            if (!isAvailable) {
-                console.error("LiveKit โหลดไม่เข้า ❌");
-                const errorBox = document.createElement('div');
-                errorBox.className = "fixed top-5 left-1/2 -translate-x-1/2 z-[200] bg-red-600 text-white px-6 py-4 border-4 border-black font-black uppercase pop-shadow-sm text-center";
-                errorBox.innerHTML = "โหลดระบบ LiveKit ไม่สำเร็จ! ❌<br>กรุณารีเฟรชหรือเช็คการเชื่อมต่อ";
-                document.body.appendChild(errorBox);
-            } else {
-                console.log("LiveKit พร้อมใช้งาน ✅");
-                checkAutoJoin();
-            }
-        });
-    </script>
+ <script>
+    window.addEventListener("load", () => {
+        // เช็คทั้ง LiveKitClient และ LiveKit
+        const lk = window.LiveKitClient || window.LiveKit;
+        
+        if (typeof lk === "undefined") {
+            console.error("LiveKit โหลดไม่เข้า ❌");
+            // ... (โค้ดแสดงกล่องแดงของคุณ)
+        } else {
+            console.log("LiveKit พร้อมใช้งาน ✅", lk);
+            checkAutoJoin();
+        }
+    });
+</script>
 
     <style>
         :root {
