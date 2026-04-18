@@ -1,716 +1,416 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <!-- 1. โหลด SDK v2.0.4 ผ่าน JSDelivr เพื่อความเสถียรสูงสุดในไทย -->
-    <script src="https://cdn.jsdelivr.net/npm/livekit-client@2.0.4/dist/livekit-client.umd.min.js"></script>
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step Up Pop! - เรียนเต้นออนไลน์ & ไลฟ์สด (LiveKit Fix)</title>
+    <title>ดินแดนการ์ตูนหรรษา - Kiddo Land</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-
     <style>
-        :root {
-            --pop-yellow: #FFD700;
-            --pop-pink: #FF00FF;
-            --pop-cyan: #00FFFF;
-            --pop-green: #39FF14;
-            --pop-black: #000000;
-            --pop-white: #FFFFFF;
-            --pop-red: #FF3131;
-        }
-
         body {
             font-family: 'Kanit', sans-serif;
-            background-color: #f0f0f0;
-            background-image: radial-gradient(var(--pop-black) 0.5px, transparent 0.5px);
-            background-size: 20px 20px;
-            color: var(--pop-black);
+            background-color: #FFF9E1;
             overflow-x: hidden;
-            scroll-behavior: smooth;
         }
 
-        .pop-shadow { box-shadow: 8px 8px 0px 0px var(--pop-black); }
-        .pop-shadow-sm { box-shadow: 4px 4px 0px 0px var(--pop-black); }
-
-        .magic-card {
-            background: var(--pop-white);
-            border: 4px solid var(--pop-black);
-            transition: all 0.2s ease-in-out;
-            flex: 0 0 auto;
-            width: 280px;
+        .kid-button {
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 6px 0 #E2C33D;
+        }
+        .kid-button:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #E2C33D;
         }
 
-        @media (max-width: 640px) { .magic-card { width: 180px; } }
-
-        .magic-card:hover {
-            transform: translate(-4px, -4px);
-            box-shadow: 12px 12px 0px 0px var(--pop-black);
+        .card-pop {
+            transition: transform 0.3s ease;
+        }
+        .card-pop:hover {
+            transform: scale(1.05) rotate(1deg);
         }
 
-        .slide-container {
-            display: flex;
-            overflow-x: auto;
-            gap: 2rem;
-            padding: 1rem 1rem 3rem 1rem;
-            scrollbar-width: none;
-        }
-        .slide-container::-webkit-scrollbar { display: none; }
+        .text-orange-kid { color: #FF922B; }
 
-        .cat-pill {
-            background: var(--pop-white);
-            border: 3px solid var(--pop-black);
-            font-weight: 800;
-            text-transform: uppercase;
-            transition: all 0.2s;
-        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .cat-pill.active { background: var(--pop-cyan); transform: rotate(-2deg); box-shadow: 4px 4px 0px 0px var(--pop-black); }
-
-        .header-box {
-            background: var(--pop-yellow);
-            border-bottom: 6px solid var(--pop-black);
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
         }
-
-        .section-tag {
-            background: var(--pop-black);
-            color: var(--pop-white);
-            padding: 4px 12px;
-            font-weight: 900;
-            display: inline-block;
-            transform: skewX(-10deg);
-        }
-
-        .pulse-live { animation: pulse-red 2s infinite; }
-        @keyframes pulse-red {
-            0% { transform: scale(0.95); opacity: 1; }
-            50% { transform: scale(1.05); opacity: 0.8; }
-            100% { transform: scale(0.95); opacity: 1; }
-        }
-
-        #video-layer {
-            position: absolute;
-            inset: 0;
-            background: #000;
-            z-index: 1;
-        }
-
-        #video-layer video {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            object-fit: cover;
-        }
-
-        .live-overlay {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 10;
-        }
+        .floating { animation: float 3s ease-in-out infinite; }
         
-        .live-badge {
-            background: var(--pop-red);
-            color: white;
-            padding: 2px 8px;
-            font-weight: 900;
-            font-size: 12px;
-            border: 2px solid black;
+        .nav-btn {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 9999px;
+            padding: 1rem;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            border: 3px solid #FF922B;
+        }
+        @media (min-width: 640px) {
+            .nav-btn { padding: 1.25rem; border-width: 4px; }
+        }
+        .nav-btn:hover {
+            transform: scale(1.15);
+            background-color: #ffffff;
         }
 
-        .viewer-count {
-            background: rgba(0,0,0,0.6);
-            color: white;
-            padding: 2px 10px;
-            border-radius: 99px;
-            font-weight: 600;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            border: 1.5px solid rgba(255,255,255,0.3);
+        .search-container {
+            position: relative;
+            max-width: 500px;
+            width: 100%;
         }
-
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .search-input {
+            width: 100%;
+            padding: 10px 15px 10px 45px;
+            border-radius: 9999px;
+            border: 3px solid #FDE047;
+            outline: none;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        @media (min-width: 640px) {
+            .search-input { padding: 12px 20px 12px 50px; border-width: 4px; font-size: 1.1rem; }
+        }
+        .search-input:focus {
+            border-color: #FF922B;
+            box-shadow: 0 0 15px rgba(255, 146, 43, 0.2);
+        }
     </style>
 </head>
-<body class="pb-32">
+<body class="pb-24">
 
-    <!-- Header -->
-    <header class="sticky top-0 z-50 header-box">
-        <div class="max-w-7xl mx-auto px-4 py-4 space-y-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4 cursor-pointer" onclick="goHome()">
-                    <div class="w-14 h-14 bg-white border-4 border-black pop-shadow-sm flex items-center justify-center -rotate-6 hover:rotate-0 transition-transform">
-                        <i data-lucide="music" class="text-black w-8 h-8"></i>
-                    </div>
-                    <div class="flex flex-col">
-                        <h1 class="text-3xl font-black tracking-tighter text-black uppercase italic leading-none" style="-webkit-text-stroke: 1px white;">สอนเต้นออนไลน์</h1>
-                        <p class="text-[11px] font-black bg-black text-white px-2 mt-1 inline-block self-start uppercase">DANCE & LIVE LOBBY!</p>
-                    </div>
-                </div>
-                
-                <div class="flex items-center gap-2">
-                    <button id="live-lobby-btn" onclick="openLiveLobby()" class="group relative flex items-center gap-2 px-4 h-12 bg-white border-4 border-black pop-shadow-sm hover:bg-red-500 hover:text-white transition-all">
-                        <div class="w-3 h-3 bg-red-600 rounded-full pulse-live group-hover:bg-white"></div>
-                        <span class="font-black italic uppercase tracking-tighter hidden md:block">LIVE NOW</span>
-                        <i data-lucide="radio" class="w-6 h-6"></i>
-                    </button>
-                </div>
+    <!-- พื้นหลังลายจุด -->
+    <div class="fixed inset-0 z-[-1] opacity-20 pointer-events-none" 
+         style="background-image: radial-gradient(#FF922B 1px, transparent 1px); background-size: 30px 30px;">
+    </div>
+
+    <!-- ส่วนหัว -->
+    <header class="bg-white border-b-4 border-yellow-400 p-4 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-col items-center gap-3 sm:gap-4">
+            <h1 class="text-2xl sm:text-4xl font-bold text-orange-kid flex items-center gap-2 sm:gap-3 cursor-pointer" onclick="goHome()">
+                <span class="text-3xl sm:text-5xl floating">🌟</span>
+                ดินแดนการ์ตูนหรรษา
+                <span class="text-3xl sm:text-5xl floating" style="animation-delay: 0.5s;">🧸</span>
+            </h1>
+            
+            <!-- ช่องค้นหา -->
+            <div class="search-container">
+                <i data-lucide="search" class="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 text-orange-400 w-5 h-5 sm:w-6 sm:h-6"></i>
+                <input type="text" id="search-input" placeholder="ค้นหาการ์ตูนที่หนูชอบ..." class="search-input" oninput="handleSearch()">
             </div>
-
-            <div class="relative w-full group">
-                <input type="text" id="search-input" oninput="handleSearch(this.value)"
-                       placeholder="ค้นหาท่าเต้นสุดมันส์..." 
-                       class="w-full bg-white border-4 border-black rounded-none py-4 pl-12 pr-4 text-lg font-bold focus:outline-none transition-all pop-shadow-sm">
-                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-black"></i>
-            </div>
-
-            <div id="category-bar" class="flex overflow-x-auto gap-3 pb-2 scroll-smooth no-scrollbar py-1"></div>
         </div>
     </header>
 
-    <main id="main-content" class="max-w-7xl mx-auto pt-8">
-        <div id="loader" class="flex flex-col items-center justify-center py-40">
-            <div class="w-20 h-20 bg-white border-8 border-black flex items-center justify-center pop-shadow animate-bounce">
-                <i data-lucide="zap" class="w-10 h-10 text-yellow-500 fill-current"></i>
-            </div>
-            <p class="mt-8 text-black text-xl font-black italic tracking-tighter uppercase animate-pulse">กำลังวอร์มอัพร่างกาย...</p>
+    <!-- คอนเทนต์หลัก -->
+    <main class="max-w-7xl mx-auto px-2 sm:px-4 pt-4 sm:pt-6">
+        
+        <!-- หมวดหมู่ -->
+        <div id="category-bar" class="flex overflow-x-auto gap-2 sm:gap-3 py-2 sm:py-4 hide-scrollbar justify-start sm:justify-center mb-2 sm:mb-4">
+            <!-- สร้างด้วย JS -->
+        </div>
+
+        <!-- รายการวิดีโอ (2 คอลัมน์บนมือถือ, 4 คอลัมน์บนหน้าจอใหญ่) -->
+        <div id="video-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-6 mt-2 sm:mt-4">
+            <!-- สร้างด้วย JS -->
+        </div>
+
+        <div id="loader" class="flex flex-col items-center justify-center py-20 text-orange-kid">
+            <div class="w-12 h-12 sm:w-16 sm:h-16 border-4 sm:border-8 border-orange-200 border-t-orange-500 rounded-full animate-spin"></div>
+            <p class="mt-4 font-bold text-lg sm:text-xl">กำลังหาการ์ตูนสนุกๆ มาให้หนูนะ...</p>
         </div>
     </main>
 
-    <!-- Navigation -->
-    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-        <div class="bg-white border-4 border-black px-8 py-3 flex gap-12 pop-shadow">
-            <button onclick="goHome()" class="flex flex-col items-center text-black hover:scale-110 transition-all">
-                <i data-lucide="layout-grid" class="w-7 h-7"></i>
-                <span class="text-[12px] font-black uppercase tracking-tight">คลาสเรียน</span>
-            </button>
-            <button onclick="openLiveLobby()" class="flex flex-col items-center text-black hover:scale-110 transition-all">
-                <i data-lucide="video" class="w-7 h-7"></i>
-                <span class="text-[12px] font-black uppercase tracking-tight">ไลฟ์สด</span>
-            </button>
-            <button onclick="openFavs()" class="flex flex-col items-center text-black hover:scale-110 transition-all">
-                <i data-lucide="heart" class="w-7 h-7"></i>
-                <span class="text-[12px] font-black uppercase tracking-tight">ที่บันทึก</span>
-            </button>
-        </div>
+    <!-- เมนูด้านล่าง -->
+    <nav class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[95%] max-w-md bg-white border-4 border-yellow-400 rounded-full shadow-2xl z-50 flex justify-around p-1 sm:p-2">
+        <button onclick="goHome()" class="flex flex-col items-center p-2 text-orange-kid hover:bg-yellow-50 rounded-full transition-all flex-1">
+            <i data-lucide="home" class="w-6 h-6 sm:w-8 sm:h-8"></i>
+            <span class="text-[10px] sm:text-xs font-bold">บ้านของหนู</span>
+        </button>
+        <button onclick="openFavs()" class="flex flex-col items-center p-2 text-pink-500 hover:bg-pink-50 rounded-full transition-all flex-1">
+            <i data-lucide="heart" class="w-6 h-6 sm:w-8 sm:h-8"></i>
+            <span class="text-[10px] sm:text-xs font-bold">ที่หนูชอบ</span>
+        </button>
+        <button onclick="window.location.reload()" class="flex flex-col items-center p-2 text-blue-500 hover:bg-blue-50 rounded-full transition-all flex-1">
+            <i data-lucide="refresh-cw" class="w-6 h-6 sm:w-8 sm:h-8"></i>
+            <span class="text-[10px] sm:text-xs font-bold">ดูใหม่</span>
+        </button>
     </nav>
 
-    <!-- Live Stream Modal -->
-    <div id="live-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-0">
-        <div class="absolute inset-0 bg-black/95 backdrop-blur-md" onclick="closeLive()"></div>
-        <div class="relative w-full max-w-lg bg-black h-full md:h-[90vh] md:max-h-[800px] md:border-8 border-black pop-shadow flex flex-col overflow-hidden">
+    <!-- Modal เครื่องเล่นการ์ตูน -->
+    <div id="video-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-1 sm:p-4">
+        <div class="absolute inset-0 bg-black/85 backdrop-blur-md" onclick="closeModal()"></div>
+        <div class="relative bg-white border-[6px] sm:border-[12px] border-yellow-400 rounded-[2rem] sm:rounded-[3.5rem] overflow-hidden w-full max-w-5xl shadow-2xl">
             
-            <!-- Video Layer -->
-            <div id="video-layer"></div>
-
-            <!-- Overlay UI Layer -->
-            <div class="live-overlay p-4 flex flex-col justify-between h-full pointer-events-none">
-                <div class="flex justify-between items-start pointer-events-auto">
-                    <div class="flex items-center gap-2">
-                        <div class="live-badge">LIVE</div>
-                        <div class="viewer-count">
-                            <i data-lucide="users" class="w-4 h-4"></i>
-                            <span id="live-viewer-count">0</span>
-                        </div>
-                    </div>
-                    <button onclick="closeLive()" class="bg-black/40 text-white w-10 h-10 rounded-full flex items-center justify-center border border-white/20">
-                        <i data-lucide="x" class="w-6 h-6"></i>
+            <button onclick="closeModal()" class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 sm:p-4 z-[110] shadow-lg hover:scale-110 active:scale-95 transition-transform border-2 sm:border-4 border-white">
+                <i data-lucide="x" class="w-5 h-5 sm:w-8 sm:h-8"></i>
+            </button>
+            
+            <div class="relative aspect-video bg-black flex items-center justify-center">
+                <div id="player-container" class="w-full h-full"></div>
+                
+                <div class="absolute inset-y-0 left-0 flex items-center pl-1 sm:pl-6 pointer-events-none">
+                    <button id="prev-btn" onclick="playPrev()" class="nav-btn text-orange-kid pointer-events-auto">
+                        <i data-lucide="chevron-left" class="w-6 h-6 sm:w-12 sm:h-12 stroke-[3px]"></i>
                     </button>
                 </div>
-
-                <div class="space-y-4 pointer-events-auto">
-                    <div class="flex items-end justify-between">
-                        <div class="flex-1">
-                            <h3 id="live-room-title" class="text-white font-black italic text-2xl uppercase tracking-tighter drop-shadow-lg">ROOM NAME</h3>
-                            <p id="live-status" class="text-white/80 font-bold text-sm uppercase drop-shadow-lg">CONNECTING...</p>
-                        </div>
-                        <div class="flex flex-col gap-4 items-center">
-                            <button onclick="copyLiveLink()" class="w-12 h-12 bg-white/20 rounded-full border border-white/40 flex items-center justify-center text-white backdrop-blur-md">
-                                <i data-lucide="share-2" class="w-7 h-7"></i>
-                            </button>
-                            <button id="host-controls" class="hidden w-12 h-12 bg-pop-cyan rounded-full border border-black flex items-center justify-center text-black pop-shadow-sm">
-                                <i data-lucide="settings" class="w-7 h-7"></i>
-                            </button>
-                        </div>
-                    </div>
+                <div class="absolute inset-y-0 right-0 flex items-center pr-1 sm:pr-6 pointer-events-none">
+                    <button id="next-btn" onclick="playNext()" class="nav-btn text-orange-kid pointer-events-auto">
+                        <i data-lucide="chevron-right" class="w-6 h-6 sm:w-12 sm:h-12 stroke-[3px]"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="p-4 sm:p-8 bg-white text-center">
+                <h2 id="modal-title" class="text-lg sm:text-3xl font-bold text-orange-kid mb-2 sm:mb-4 line-clamp-1 px-8 sm:px-12">ชื่อการ์ตูน</h2>
+                <div class="flex justify-center">
+                    <button id="modal-fav-btn" onclick="toggleFavoriteCurrent()" class="kid-button bg-pink-400 text-white px-6 sm:px-10 py-2 sm:py-3 rounded-full font-bold flex items-center gap-2 sm:gap-3 text-sm sm:text-lg transition-all">
+                        <i data-lucide="heart" class="w-5 h-5 sm:w-7 sm:h-7"></i>
+                        <span>เก็บไว้ดูอีกนะ</span>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Create Room Modal -->
-    <div id="create-live-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCreateLive()"></div>
-        <div class="relative w-full max-w-md bg-white border-8 border-black pop-shadow p-8">
-            <h2 class="text-3xl font-black uppercase italic tracking-tighter mb-6">เริ่มไลฟ์สดของคุณ</h2>
-            <div class="space-y-4">
-                <div>
-                    <label class="block font-black uppercase text-xs mb-1">ชื่อห้องเต้น</label>
-                    <input type="text" id="live-title-input" placeholder="ใส่ชื่อห้องที่นี่..." class="w-full border-4 border-black p-3 font-bold focus:bg-yellow-100 outline-none">
-                </div>
-                <button onclick="startLiveKitSession('host')" class="w-full py-4 bg-cyan-400 border-4 border-black font-black uppercase text-xl pop-shadow-sm active:translate-x-1 active:translate-y-1 transition-all">
-                    เปิดกล้องสอนเต้นเลย!
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- YouTube Video Modal -->
-    <div id="video-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
-        <div class="relative w-full max-w-4xl bg-white border-8 border-black pop-shadow overflow-hidden">
-            <button onclick="closeModal()" class="absolute top-4 right-4 z-[110] bg-white border-4 border-black hover:bg-red-500 hover:text-white w-12 h-12 flex items-center justify-center transition-all pop-shadow-sm">
-                <i data-lucide="x" class="w-8 h-8"></i>
-            </button>
-            <div class="aspect-video bg-black border-b-8 border-black">
-                <div id="player-container" class="w-full h-full"></div>
-            </div>
-            <div class="p-8 text-center bg-yellow-400">
-                <h2 id="modal-title" class="text-2xl md:text-4xl font-black text-black mb-6 uppercase italic tracking-tighter leading-none">ชื่อบทเรียน</h2>
-                <button id="modal-fav-btn" onclick="toggleFavoriteCurrent()" class="px-10 py-4 bg-white border-4 border-black font-black text-lg uppercase flex items-center gap-3 mx-auto transition-all pop-shadow-sm active:translate-x-1 active:translate-y-1 active:shadow-none">
-                    <i data-lucide="heart" class="w-6 h-6"></i>
-                    <span>บันทึกท่านี้!</span>
-                </button>
-            </div>
-        </div>
-    </div>
+    <script src="https://www.youtube.com/iframe_api"></script>
 
     <script>
-        // --- CONFIG ---
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTe2E7RJNm4g58PUOorzYdo7aGTGuWTTe4MpZzITqM9pSnHA-9Wi3foVDFhrfH930g7dBF08hiP2UwE/pub?output=csv";
-        const WORKER_URL = "https://dancelive.tontakankeawpang.workers.dev"; 
-        const LK_SERVER_URL = "wss://live-yeitmlw1.livekit.cloud";
-        const LOBBY_API = "https://script.google.com/macros/s/AKfycbyB8nEcf0uQT5FFG24r6ZQNxNQYMQnxXLpvfIAXt8e-KJqmg0ANhYnvuhDFWxaQaHZQ/exec";
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ9QPKOt_ptK8_1ykIQOV--jL4yGlpd6NTxBt84w_NpTswUyBKbUZoMA8r2fsAXJ8NP1XZSlUO5WJ_T/pub?output=csv";
 
-        let livekitRoom = null;
         let allVideos = [];
-        let favorites = JSON.parse(localStorage.getItem('dance_pop_favs') || '[]');
+        let currentPlaylist = [];
+        let currentIndex = -1;
+        let favorites = JSON.parse(localStorage.getItem('kiddo_favs') || '[]');
         let currentVideo = null;
-        let ytPlayer = null;
-        let activeRole = 'viewer';
+        let player = null;
+        let currentCategory = 'ทั้งหมด';
+        let searchQuery = '';
 
-        // --- LiveKit & Lobby Logic ---
-
-        function checkAutoJoin() {
-            const params = new URLSearchParams(window.location.search);
-            const autoTitle = params.get('room');
-            if (autoTitle) {
-                joinLiveFromLobby(autoTitle);
-            }
-        }
-
-        async function startLiveKitSession(role, roomName = null) {
-            activeRole = role;
-            const titleInput = document.getElementById('live-title-input');
-            const title = (roomName || (titleInput ? titleInput.value.trim() : "POP DANCE LIVE") || "POP DANCE LIVE").replace(/\s+/g, '-');
-
-            closeCreateLive();
-            
-            const titleEl = document.getElementById('live-room-title');
-            if (titleEl) titleEl.innerText = title.toUpperCase();
-            
-            const statusEl = document.getElementById('live-status');
-            if (statusEl) statusEl.innerText = "GETTING TOKEN...";
-            
-            const liveModal = document.getElementById('live-modal');
-            if (liveModal) liveModal.classList.remove('hidden');
-
-            try {
-                // 1. Fetch Token
-                const response = await fetch(`${WORKER_URL}?room=${encodeURIComponent(title)}&role=${role}`)
-                    .catch(err => { throw new Error("Worker Connection Failed (CORS หรือ URL ผิด)"); });
-                
-                if (!response.ok) throw new Error("Server Error: " + response.status);
-                
-                const data = await response.json();
-                const token = data.token;
-
-                if (!token) throw new Error("ไม่ได้รับ Token จากระบบ");
-
-                // 2. Setup Room (v2 Robust Check) - แก้ปัญหา Namespace Error
-                const LK = window.LivekitClient || window.LiveKitClient || window.LiveKit;
-                const RoomClass = LK?.Room;
-                if (!RoomClass) {
-                    const keys = Object.keys(window).filter(k => k.toLowerCase().includes('livekit'));
-                    throw new Error(`หา Class Room ของ LiveKit ไม่เจอ (window keys: ${keys.join(', ')})`);
-                }
-
-                livekitRoom = new RoomClass({
-                    adaptiveStream: true,
-                    dynacast: true,
-                });
-
-                const LKEvents = LK.RoomEvent;
-
-                // Subscribe tracks (Viewer)
-                livekitRoom.on(LKEvents.TrackSubscribed, (track, publication, participant) => {
-                    if (track.kind === 'video') {
-                        attachTrack(track, participant.sid);
-                    } else if (track.kind === 'audio') {
-                        track.attach();
-                    }
-                });
-
-                // Local track publish (Host)
-                livekitRoom.on(LKEvents.LocalTrackPublished, (publication) => {
-                    if (publication.kind === 'video' && publication.track) {
-                        attachTrack(publication.track, 'local');
-                    }
-                });
-
-                livekitRoom.on(LKEvents.TrackUnsubscribed, (track, publication, participant) => {
-                    track.detach();
-                    const el = document.getElementById(`video-${participant.sid}`);
-                    if (el) el.remove();
-                });
-
-                livekitRoom.on(LKEvents.ParticipantConnected, () => updateParticipantsCount());
-                livekitRoom.on(LKEvents.ParticipantDisconnected, () => updateParticipantsCount());
-
-                // 3. Connect
-                await livekitRoom.connect(LK_SERVER_URL.trim(), token);
-                
-                if (statusEl) statusEl.innerText = (role === 'host' ? "🔥 HOSTING LIVE" : "👀 VIEWING LIVE");
-                updateParticipantsCount();
-
-                if (role === 'host') {
-                    const hostCtrl = document.getElementById('host-controls');
-                    if (hostCtrl) hostCtrl.classList.remove('hidden');
-                    
-                    await livekitRoom.localParticipant.setCameraEnabled(true);
-                    await livekitRoom.localParticipant.setMicrophoneEnabled(true);
-                    
-                    await registerRoom(title);
-                }
-
-            } catch (error) {
-                console.error("LiveKit connection error:", error);
-                let errorMsg = error.message;
-                if (errorMsg.includes("401") || errorMsg.includes("Unauthorized")) {
-                    errorMsg = "AUTH ERROR: API Key ไม่ถูกต้อง";
-                }
-                if (statusEl) statusEl.innerText = "ERROR!";
-                showToast("เชื่อมต่อไม่สำเร็จ: " + errorMsg);
-                setTimeout(() => closeLive(false), 4000);
-            }
-        }
-
-        async function registerRoom(title) {
-            try {
-                await fetch(`${LOBBY_API}?action=add&room=${encodeURIComponent(title)}`, { mode: 'no-cors' });
-            } catch (e) { console.warn("Lobby registration error:", e); }
-        }
-
-        async function removeRoom(title) {
-            try {
-                await fetch(`${LOBBY_API}?action=remove&room=${encodeURIComponent(title)}`, { mode: 'no-cors' });
-            } catch (e) { console.warn("Lobby removal error:", e); }
-        }
-
-        function attachTrack(track, id) {
-            const container = document.getElementById('video-layer');
-            if (!container) return;
-            
-            let videoEl = document.getElementById(`video-${id}`);
-            if (!videoEl) {
-                videoEl = track.attach();
-                videoEl.id = `video-${id}`;
-                videoEl.className = "absolute inset-0 w-full h-full object-cover transition-opacity duration-500";
-                if (id === 'local') videoEl.style.transform = "scaleX(-1)";
-                container.appendChild(videoEl);
-            }
-        }
-
-        function updateParticipantsCount() {
-            if (!livekitRoom) return;
-            const countEl = document.getElementById('live-viewer-count');
-            if (!countEl) return;
-            
-            // v2: numParticipants property is safer
-            const count = livekitRoom.numParticipants || (livekitRoom.remoteParticipants?.size ?? 0) + 1;
-            countEl.innerText = count;
-        }
-
-        function copyLiveLink() {
-            const titleEl = document.getElementById('live-room-title');
-            if (!titleEl) return;
-            
-            const room = titleEl.innerText;
-            const shareUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(room)}`;
-            const tempInput = document.createElement("input");
-            document.body.appendChild(tempInput);
-            tempInput.value = shareUrl;
-            tempInput.select();
-            document.execCommand("copy");
-            document.body.removeChild(tempInput);
-            showToast("คัดลอกลิงก์แชร์ห้องแล้ว! 🚀");
-        }
-
-        async function closeLive(shouldRefreshLobby = true) {
-            const titleEl = document.getElementById('live-room-title');
-            const currentTitle = titleEl ? titleEl.innerText : "";
-            
-            const liveModal = document.getElementById('live-modal');
-            if (liveModal) liveModal.classList.add('hidden');
-            
-            if (activeRole === 'host' && currentTitle) {
-                await removeRoom(currentTitle);
-            }
-            
-            if (livekitRoom) {
-                await livekitRoom.disconnect();
-                livekitRoom = null;
-            }
-            
-            const videoLayer = document.getElementById('video-layer');
-            if (videoLayer) videoLayer.innerHTML = '';
-            
-            const hostCtrl = document.getElementById('host-controls');
-            if (hostCtrl) hostCtrl.classList.add('hidden');
-            
-            lucide.createIcons();
-            
-            if (shouldRefreshLobby && document.getElementById('active-lives-container')) {
-                openLiveLobby();
-            }
-        }
-
-        // --- Lobby Rendering ---
-
-        async function openLiveLobby() {
-            const container = document.getElementById('main-content');
-            if (!container) return;
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            container.innerHTML = `
-                <div class="px-6 mb-12">
-                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
-                        <div>
-                            <div class="section-tag mb-2 bg-red-600">LIVE DANCE AREA!</div>
-                            <h2 class="text-6xl font-black italic uppercase italic">LOBBY</h2>
-                        </div>
-                        <button onclick="openCreateLive()" class="px-8 py-4 bg-pop-green border-4 border-black font-black uppercase text-xl pop-shadow hover:-translate-y-1 transition-all flex items-center gap-3">
-                            <i data-lucide="plus-circle" class="w-8 h-8"></i>สร้างห้องเต้น
-                        </button>
-                    </div>
-                    <div id="active-lives-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <div class="col-span-full py-20 text-center">
-                            <p class="text-2xl font-black uppercase italic animate-pulse">กำลังค้นหาห้องเต้นที่กำลังไลฟ์...</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-            lucide.createIcons();
-            
-            try {
-                const res = await fetch(LOBBY_API);
-                const rooms = await res.json();
-                renderRooms(rooms);
-            } catch (e) {
-                const listContainer = document.getElementById('active-lives-container');
-                if (listContainer) {
-                    listContainer.innerHTML = `
-                        <div class="col-span-full py-10 text-center bg-red-100 border-4 border-black p-6">
-                            <p class="text-xl font-black uppercase italic">ไม่สามารถดึงข้อมูลห้องได้ในขณะนี้!</p>
-                            <button onclick="openLiveLobby()" class="mt-4 px-6 py-2 bg-black text-white font-black uppercase">ลองใหมีกครั้ง</button>
-                        </div>
-                    `;
-                }
-            }
-        }
-
-        function renderRooms(rooms) {
-            const listContainer = document.getElementById('active-lives-container');
-            if (!listContainer) return;
-            
-            if (!rooms || rooms.length === 0) {
-                listContainer.innerHTML = `
-                    <div class="col-span-full py-20 text-center bg-white border-4 border-black pop-shadow">
-                        <p class="text-2xl font-black uppercase italic text-black mb-4">ยังไม่มีใครเปิดห้องเต้นเลย...</p>
-                        <button onclick="openCreateLive()" class="px-6 py-2 bg-black text-white font-black hover:bg-red-600 transition-all uppercase">เป็นคนแรกที่เริ่มเต้นสิ!</button>
-                    </div>
-                `;
-                return;
-            }
-
-            const colors = ['#00FFFF', '#FF00FF', '#39FF14', '#FFD700'];
-            listContainer.innerHTML = rooms.map((room, i) => {
-                const safeName = room.name.replace(/"/g, '&quot;');
-                return `
-                <div class="bg-white border-4 border-black pop-shadow p-6 relative group">
-                    <div class="absolute top-4 right-4 bg-red-600 text-white px-3 py-1 font-black text-xs pulse-live border-2 border-black">LIVE</div>
-                    <div class="aspect-video border-4 border-black mb-4 flex items-center justify-center overflow-hidden" style="background-color: ${colors[i % colors.length]}">
-                        <i data-lucide="radio" class="w-16 h-16 text-black opacity-30"></i>
-                    </div>
-                    <h3 class="text-2xl font-black uppercase italic mb-4 line-clamp-1">${room.name}</h3>
-                    <button data-room="${safeName}" onclick="joinLiveFromLobby(this.dataset.room)" class="w-full py-3 bg-black text-white font-black hover:bg-red-600 transition-all uppercase italic text-lg pop-shadow-sm">
-                        ENTER ROOM
-                    </button>
-                </div>
-            `}).join('');
-            lucide.createIcons();
-        }
-
-        function joinLiveFromLobby(name) {
-            startLiveKitSession('viewer', name);
-        }
-
-        // --- Standard UI Content Logic ---
-
-        async function fetchVideos() {
-            try {
-                const res = await fetch(CSV_URL);
-                const data = await res.text();
-                const rows = data.split(/\r?\n/).filter(r => r.trim() !== "").slice(1);
-                allVideos = rows.map((row, i) => {
-                    const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                    const cat = (cols[0] || 'DANCE').replace(/"/g, '').trim().toUpperCase();
-                    const title = (cols[1] || 'NEW MOVE').replace(/"/g, '').trim();
-                    const url = (cols[2] || '').replace(/"/g, '').trim();
-                    const vId = extractID(url);
-                    return { id: 'p_'+i, category: cat, title, vId, thumb: vId ? `https://i.ytimg.com/vi/${vId}/mqdefault.jpg` : null };
-                }).filter(v => v.vId);
-                
-                const loader = document.getElementById('loader');
-                if (loader) loader.classList.add('hidden');
-                
-                renderHome();
-            } catch (e) { console.error(e); }
-        }
+        lucide.createIcons();
 
         function extractID(url) {
+            if (!url) return null;
             const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:.*v=|.*\/|.*embed\/))([^?&"'>\s]+)/);
             return (match && match[1].length === 11) ? match[1] : null;
         }
 
-        function renderHome() {
-            const container = document.getElementById('main-content');
-            const categoryBar = document.getElementById('category-bar');
-            if(!container || !categoryBar) return;
-            container.innerHTML = ''; categoryBar.innerHTML = '';
-            const groups = allVideos.reduce((acc, v) => { acc[v.category] = acc[v.category] || []; acc[v.category].push(v); return acc; }, {});
-            Object.entries(groups).forEach(([cat, videos], idx) => {
-                const btn = document.createElement('button');
-                btn.className = 'cat-pill px-6 py-2.5 text-sm transition-all';
-                btn.innerText = cat;
-                btn.onclick = () => {
-                    const sec = document.getElementById('sec-'+idx);
-                    if (sec) window.scrollTo({ top: sec.offsetTop - 200, behavior: 'smooth' });
-                };
-                categoryBar.appendChild(btn);
-                const section = document.createElement('section');
-                section.id = 'sec-' + idx;
-                section.className = 'mb-16';
-                section.innerHTML = `<div class="px-6 mb-4"><div class="section-tag">${cat}</div><h2 class="text-4xl font-black italic uppercase">${cat} SESSION</h2></div><div class="slide-container">${videos.map((v, i) => renderCard(v, i)).join('')}</div>`;
-                container.appendChild(section);
-            });
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result;
+        }
+
+        async function fetchVideos() {
+            try {
+                const response = await fetch(CSV_URL);
+                if (!response.ok) throw new Error('Fetch failed');
+                const data = await response.text();
+                
+                const rows = data.split(/\r?\n/).filter(row => row.trim() !== "");
+                const dataRows = rows.slice(1);
+
+                allVideos = dataRows.map((row, index) => {
+                    const cols = parseCSVLine(row);
+                    const category = (cols[0] || 'ทั่วไป').replace(/^"|"$/g, '');
+                    const title = (cols[1] || 'การ์ตูนสนุกๆ').replace(/^"|"$/g, '');
+                    const url = (cols[2] || '').replace(/^"|"$/g, '');
+                    const videoId = extractID(url);
+
+                    return {
+                        id: 'v_' + index,
+                        category,
+                        title,
+                        videoId,
+                        thumbnail: videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null
+                    };
+                }).filter(v => v.videoId !== null);
+
+                document.getElementById('loader').style.display = 'none';
+                
+                if (allVideos.length === 0) {
+                    document.getElementById('video-grid').innerHTML = '<div class="col-span-full py-20 text-center text-gray-400">แง! ไม่พบข้อมูลคลิปในสเปรดชีตจ๊ะ</div>';
+                }
+
+                renderCategories();
+                applyFilters();
+            } catch (error) {
+                console.error("Error:", error);
+                document.getElementById('loader').innerHTML = `<p class="text-red-500 font-bold">แง! โหลดข้อมูลไม่ได้ ลองตรวจสอบการ Publish CSV นะจ๊ะ</p>`;
+            }
+        }
+
+        function renderCategories() {
+            const cats = ['ทั้งหมด', ...new Set(allVideos.map(v => v.category))];
+            const bar = document.getElementById('category-bar');
+            bar.innerHTML = cats.map(cat => `
+                <button onclick="setCategory('${cat}')" 
+                        class="category-btn kid-button ${currentCategory === cat ? 'bg-orange-400 text-white' : 'bg-white text-orange-kid'} border-2 sm:border-4 border-yellow-300 px-4 sm:px-6 py-1 sm:py-2 rounded-full font-bold whitespace-nowrap text-sm sm:text-base hover:bg-yellow-100 transition-colors">
+                    ${cat}
+                </button>
+            `).join('');
+        }
+
+        function setCategory(cat) {
+            currentCategory = cat;
+            renderCategories();
+            applyFilters();
+        }
+
+        function handleSearch() {
+            searchQuery = document.getElementById('search-input').value.toLowerCase();
+            applyFilters();
+        }
+
+        function applyFilters() {
+            let filtered = allVideos;
+            
+            if (currentCategory !== 'ทั้งหมด' && currentCategory !== 'รายการโปรด') {
+                filtered = filtered.filter(v => v.category === currentCategory);
+            } else if (currentCategory === 'รายการโปรด') {
+                filtered = allVideos.filter(v => favorites.includes(v.id));
+            }
+            
+            if (searchQuery) {
+                filtered = filtered.filter(v => 
+                    v.title.toLowerCase().includes(searchQuery) || 
+                    v.category.toLowerCase().includes(searchQuery)
+                );
+            }
+            
+            renderGrid(filtered);
+        }
+
+        function renderGrid(list) {
+            const grid = document.getElementById('video-grid');
+            currentPlaylist = list;
+
+            if (list.length === 0) {
+                grid.innerHTML = '<div class="col-span-full py-20 text-center text-gray-400 font-bold text-lg sm:text-xl">ไม่พบการ์ตูนที่หนูหาเลยจ๊ะ ลองหาคำอื่นดูนะ! 🧸</div>';
+                return;
+            }
+
+            grid.innerHTML = list.map((v, idx) => `
+                <div class="card-pop cursor-pointer h-full" onclick="playVideoAtIndex(${idx})">
+                    <div class="bg-white border-[4px] sm:border-[6px] border-white rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-lg sm:shadow-xl h-full flex flex-col transition-all hover:shadow-2xl">
+                        <div class="relative aspect-video bg-gray-100">
+                            <img src="${v.thumbnail}" class="w-full h-full object-cover" loading="lazy" onerror="this.src='https://placehold.co/400x225?text=No+Preview'">
+                            <div class="absolute inset-0 flex items-center justify-center bg-black/5 sm:opacity-0 sm:hover:opacity-100 transition-opacity">
+                                <div class="bg-white/90 rounded-full p-2 sm:p-4 shadow-lg">
+                                    <i data-lucide="play" class="w-5 h-5 sm:w-8 sm:h-8 text-orange-kid fill-current"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-2 sm:p-5 text-center flex-grow flex flex-col justify-between">
+                            <h3 class="font-bold text-xs sm:text-lg text-gray-700 line-clamp-2 mb-1 sm:mb-2 leading-tight">${v.title}</h3>
+                            <span class="inline-block px-2 sm:px-4 py-0.5 sm:py-1 bg-yellow-100 text-orange-600 rounded-full text-[10px] sm:text-xs font-bold self-center">${v.category}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
             lucide.createIcons();
         }
 
-        function renderCard(v, i) {
-            const colors = ['#00FFFF', '#FF00FF', '#39FF14', '#FFD700'];
-            return `<div class="magic-card group cursor-pointer overflow-hidden pop-shadow" onclick="playVideo('${v.vId}', '${v.title.replace(/'/g, "\\'")}', '${v.id}')"><div class="relative aspect-square border-b-4 border-black overflow-hidden bg-black"><img src="${v.thumb}" class="w-full h-full object-cover group-hover:scale-110 transition-transform opacity-90"><div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all"><div class="w-16 h-16 bg-white border-4 border-black flex items-center justify-center pop-shadow-sm"><i data-lucide="play" class="fill-current"></i></div></div></div><div class="p-4" style="background-color: ${colors[Math.floor(Math.random()*colors.length)]}"><h3 class="font-black text-black line-clamp-2 uppercase italic tracking-tighter">${v.title}</h3></div></div>`;
-        }
-
-        function openCreateLive() { 
-            const modal = document.getElementById('create-live-modal');
-            if (modal) modal.classList.remove('hidden'); 
-        }
-        function closeCreateLive() { 
-            const modal = document.getElementById('create-live-modal');
-            if (modal) modal.classList.add('hidden'); 
-        }
-
-        function playVideo(vId, title, id) {
-            currentVideo = {vId, title, id};
-            const titleEl = document.getElementById('modal-title');
-            if (titleEl) titleEl.innerText = title;
+        function playVideoAtIndex(index) {
+            if (index < 0 || index >= currentPlaylist.length) return;
             
-            const modal = document.getElementById('video-modal');
-            if (modal) modal.classList.remove('hidden');
-            
-            if (!ytPlayer) {
-                ytPlayer = new YT.Player('player-container', { height: '100%', width: '100%', videoId: vId, playerVars: { 'autoplay': 1 } });
-            } else { ytPlayer.loadVideoById(vId); }
+            currentIndex = index;
+            const video = currentPlaylist[currentIndex];
+            currentVideo = video;
+
+            document.getElementById('modal-title').textContent = video.title;
+            document.getElementById('video-modal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            if (!player) {
+                player = new YT.Player('player-container', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: video.videoId,
+                    playerVars: { 
+                        'autoplay': 1, 
+                        'rel': 0, 
+                        'modestbranding': 1,
+                        'origin': window.location.origin,
+                        'fs': 1
+                    },
+                    events: { 
+                        'onStateChange': (event) => { if (event.data === YT.PlayerState.ENDED) playNext(); } 
+                    }
+                });
+            } else {
+                player.loadVideoById(video.videoId);
+            }
             updateFavBtn();
         }
 
-        function closeModal() { 
-            const modal = document.getElementById('video-modal');
-            if (modal) modal.classList.add('hidden'); 
-            if(ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo(); 
+        function playNext() {
+            if (currentIndex < currentPlaylist.length - 1) playVideoAtIndex(currentIndex + 1);
+            else playVideoAtIndex(0);
         }
-        
-        async function goHome() { 
-            closeModal(); 
-            await closeLive(false); 
-            renderHome(); 
+
+        function playPrev() {
+            if (currentIndex > 0) playVideoAtIndex(currentIndex - 1);
+            else playVideoAtIndex(currentPlaylist.length - 1);
         }
-        
+
+        function closeModal() {
+            document.getElementById('video-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            if (player) player.stopVideo();
+        }
+
+        function goHome() {
+            document.getElementById('search-input').value = '';
+            searchQuery = '';
+            currentCategory = 'ทั้งหมด';
+            closeModal();
+            renderCategories();
+            applyFilters();
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+
         function toggleFavoriteCurrent() {
             if (!currentVideo) return;
             const idx = favorites.indexOf(currentVideo.id);
-            if (idx > -1) favorites.splice(idx, 1); else favorites.push(currentVideo.id);
-            localStorage.setItem('dance_pop_favs', JSON.stringify(favorites));
+            if (idx > -1) favorites.splice(idx, 1);
+            else favorites.push(currentVideo.id);
+            localStorage.setItem('kiddo_favs', JSON.stringify(favorites));
             updateFavBtn();
         }
-        
+
         function updateFavBtn() {
             const btn = document.getElementById('modal-fav-btn');
-            if (!btn || !currentVideo) return;
             const isFav = favorites.includes(currentVideo.id);
-            btn.className = isFav ? "px-10 py-4 bg-pink-500 text-white border-4 border-black font-black uppercase flex items-center gap-3 mx-auto pop-shadow-sm" : "px-10 py-4 bg-white text-black border-4 border-black font-black uppercase flex items-center gap-3 mx-auto pop-shadow-sm";
-            const span = btn.querySelector('span');
-            if (span) span.innerText = isFav ? 'บันทึกแล้ว! BOOM!' : 'บันทึกท่านี้! CLICK!';
+            btn.className = `kid-button ${isFav ? 'bg-pink-600' : 'bg-pink-400'} text-white px-6 sm:px-10 py-2 sm:py-3 rounded-full font-bold flex items-center gap-2 sm:gap-3 text-sm sm:text-lg transition-all`;
+            btn.querySelector('span').textContent = isFav ? 'หนูชอบเรื่องนี้มากเลย' : 'เก็บไว้ดูอีกนะ';
+            lucide.createIcons();
         }
 
         function openFavs() {
-            const list = allVideos.filter(v => favorites.includes(v.id));
-            const container = document.getElementById('main-content');
-            if (!container) return;
-            container.innerHTML = `<div class="px-6 mb-12"><div class="section-tag mb-8 bg-pink-500">YOUR FAVORITES!</div><div class="grid grid-cols-2 md:grid-cols-4 gap-8">${list.map(v => renderCard(v, 0)).join('')}</div></div>`;
-            lucide.createIcons();
+            currentCategory = 'รายการโปรด';
+            renderCategories();
+            applyFilters();
+            window.scrollTo({top: 0, behavior: 'smooth'});
         }
 
-        function handleSearch(term) {
-            const q = term.toLowerCase().trim();
-            if(!q) return renderHome();
-            const container = document.getElementById('main-content');
-            if (!container) return;
-            const filtered = allVideos.filter(v => v.title.toLowerCase().includes(q) || v.category.toLowerCase().includes(q));
-            container.innerHTML = `<div class="px-6 mb-12"><div class="section-tag mb-8">SEARCH: ${term}</div><div class="grid grid-cols-2 md:grid-cols-4 gap-8">${filtered.map(v => renderCard(v, 0)).join('')}</div></div>`;
-            lucide.createIcons();
-        }
-
-        function showToast(text) {
-            const msg = document.createElement('div');
-            msg.className = "fixed top-10 left-1/2 -translate-x-1/2 bg-black text-white px-6 py-3 border-4 border-pop-cyan font-black z-[200] uppercase italic pop-shadow-sm text-center";
-            msg.innerText = text;
-            document.body.appendChild(msg);
-            setTimeout(() => msg.remove(), 3000);
-        }
-
-        // รวมการทำงานเมื่อโหลดหน้าเว็บ
-        window.addEventListener("load", () => {
-            console.log("Initializing Application...");
-            fetchVideos();
-            
-            setTimeout(() => {
-                const lk = window.LivekitClient || window.LiveKitClient || window.LiveKit;
-                if (!lk) {
-                    console.warn("LiveKit not immediately found, checking again...");
-                } else {
-                    console.log("LiveKit SDK ready ✅ Namespace:", Object.keys(window).filter(k=>k.toLowerCase().includes('livekit')));
-                    checkAutoJoin();
-                }
-            }, 500);
-        });
+        window.onload = fetchVideos;
     </script>
-    <script src="https://www.youtube.com/iframe_api"></script>
 </body>
 </html>
