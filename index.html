@@ -7,8 +7,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Agora SDK - Using a more robust CDN (Cloudflare) -->
-    <script id="agora-sdk" src="https://cdnjs.cloudflare.com/ajax/libs/agora-rtc-sdk-ng/4.20.0/agora-rtc-sdk-ng.min.js"></script>
+    
+    <!-- Agora SDK - เปลี่ยนเป็นเวอร์ชันที่เสถียรกว่า (JSDelivr) -->
+    <script src="https://cdn.jsdelivr.net/npm/agora-rtc-sdk-ng@4.21.0/AgoraRTC_N.min.js"></script>
+    
+    <!-- เพิ่มระบบตรวจสอบการโหลด Agora SDK -->
+    <script>
+        window.addEventListener("load", () => {
+            if (typeof AgoraRTC === "undefined") {
+                console.error("Agora โหลดไม่เข้า ❌");
+                // แสดงการแจ้งเตือนแบบ Pop-up ภายในแอปแทน alert ของเบราว์เซอร์
+                const errorBox = document.createElement('div');
+                errorBox.className = "fixed top-5 left-1/2 -translate-x-1/2 z-[200] bg-red-600 text-white px-6 py-4 border-4 border-black font-black uppercase pop-shadow-sm";
+                errorBox.innerHTML = "โหลดระบบไลฟ์ไม่สำเร็จ! กรุณาลองรีเฟรชหน้าเว็บ ❌";
+                document.body.appendChild(errorBox);
+            } else {
+                console.log("Agora พร้อมใช้งาน ✅");
+            }
+        });
+    </script>
+
     <style>
         :root {
             --pop-yellow: #FFD700;
@@ -296,7 +314,6 @@
         async function ensureAgoraReady() {
             if (isAgoraLoaded()) return true;
             
-            // Try waiting for up to 8 seconds with more frequent checks
             return new Promise((resolve) => {
                 let attempts = 0;
                 const interval = setInterval(() => {
@@ -352,7 +369,6 @@
 
         function updateViewers() {
             if (!agoraClient) return;
-            // Simulated calculation for UI demo
             const baseCount = 12 + agoraClient.remoteUsers.length;
             const el = document.getElementById('live-viewer-count');
             if (el) el.innerText = baseCount;
@@ -361,7 +377,6 @@
         async function startNewLive() {
             const isReady = await ensureAgoraReady();
             if (!isReady) {
-                console.error("Agora SDK is not ready.");
                 const msg = document.createElement('div');
                 msg.className = "fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 border-4 border-black font-black z-[200] uppercase italic";
                 msg.innerText = "ระบบไลฟ์สดยังไม่พร้อมใช้งาน (SDK Load Error)";
