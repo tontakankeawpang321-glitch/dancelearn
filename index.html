@@ -7,8 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- Agora SDK - Using a reliable version and tag -->
-    <script id="agora-sdk" src="https://cdn.jsdelivr.net/npm/agora-rtc-sdk-ng@4.20.0/dist/agora-rtc-sdk-ng.min.js"></script>
+    <!-- Agora SDK - Using a more robust CDN (Cloudflare) -->
+    <script id="agora-sdk" src="https://cdnjs.cloudflare.com/ajax/libs/agora-rtc-sdk-ng/4.20.0/agora-rtc-sdk-ng.min.js"></script>
     <style>
         :root {
             --pop-yellow: #FFD700;
@@ -296,7 +296,7 @@
         async function ensureAgoraReady() {
             if (isAgoraLoaded()) return true;
             
-            // Try waiting for a few seconds
+            // Try waiting for up to 8 seconds with more frequent checks
             return new Promise((resolve) => {
                 let attempts = 0;
                 const interval = setInterval(() => {
@@ -304,7 +304,7 @@
                     if (isAgoraLoaded()) {
                         clearInterval(interval);
                         resolve(true);
-                    } else if (attempts > 50) { // Timeout after ~5 seconds
+                    } else if (attempts > 80) { // Timeout after ~8 seconds
                         clearInterval(interval);
                         console.error("Agora SDK failed to load within timeout.");
                         resolve(false);
@@ -352,6 +352,7 @@
 
         function updateViewers() {
             if (!agoraClient) return;
+            // Simulated calculation for UI demo
             const baseCount = 12 + agoraClient.remoteUsers.length;
             const el = document.getElementById('live-viewer-count');
             if (el) el.innerText = baseCount;
@@ -360,7 +361,12 @@
         async function startNewLive() {
             const isReady = await ensureAgoraReady();
             if (!isReady) {
-                alert("ขออภัย ระบบไลฟ์สดยังไม่พร้อมใช้งานในขณะนี้ กรุณาลองใหม่อีกครั้ง");
+                console.error("Agora SDK is not ready.");
+                const msg = document.createElement('div');
+                msg.className = "fixed top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 border-4 border-black font-black z-[200] uppercase italic";
+                msg.innerText = "ระบบไลฟ์สดยังไม่พร้อมใช้งาน (SDK Load Error)";
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 3000);
                 return;
             }
 
@@ -390,16 +396,12 @@
                 updateViewers();
             } catch (e) {
                 console.error("Agora join failed", e);
-                alert("ไม่สามารถเริ่มไลฟ์ได้: " + e.message);
             }
         }
 
         async function joinLive(roomId, title, creator) {
             const isReady = await ensureAgoraReady();
-            if (!isReady) {
-                alert("ขออภัย ระบบไลฟ์สดยังไม่พร้อมใช้งานในขณะนี้");
-                return;
-            }
+            if (!isReady) return;
 
             document.getElementById('live-room-title').innerText = title.toUpperCase();
             document.getElementById('live-room-host').innerText = "@" + creator;
@@ -433,7 +435,6 @@
                 } catch(e) {}
             }
             
-            // Clean up UI and reset overlay
             const videoContainer = document.getElementById("agora-video-container");
             videoContainer.innerHTML = `
                 <div class="live-overlay p-4 flex flex-col justify-between h-full pointer-events-none">
@@ -460,8 +461,6 @@
             `;
             lucide.createIcons();
         }
-
-        // --- Core Application Logic ---
 
         async function fetchVideos() {
             try {
